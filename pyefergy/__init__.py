@@ -1,6 +1,6 @@
 """An API library for efergy energy meters."""
 from __future__ import annotations
-from typing import Any
+import asyncio
 import logging
 from aiohttp import ClientSession
 from asyncio.exceptions import TimeoutError as timeouterr
@@ -26,12 +26,11 @@ class Efergy:
     """Implementation of Efergy object."""
 
     def __init__(
-        self, api_token: str, loop: Any, session: ClientSession, utc_offset: str = "0"
+        self, api_token: str, session: ClientSession, utc_offset: str = "0"
     ) -> None:
         """Initialize."""
         self._api_token = api_token
         self._utc_offset = utc_offset
-        self._loop = loop
         self._session = session
 
     async def get_sids(self) -> str:
@@ -82,7 +81,7 @@ class Efergy:
     async def _async_send_get(self, url: str, type_str: str, sid: str = None) -> str:
         """Send get request."""
         try:
-            async with timeout(TIMEOUT, loop=self._loop):
+            async with timeout(TIMEOUT, loop=asyncio.get_running_loop()):
                 _response = await self._session.get(url)
                 _data = await _response.json(content_type="text/html")
                 if "description" in _data and _data["description"] == "bad token":
