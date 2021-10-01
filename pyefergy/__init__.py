@@ -5,14 +5,17 @@ from asyncio import get_running_loop
 from asyncio.exceptions import TimeoutError as timeouterr
 from datetime import datetime
 import logging
+from typing import Any
+import iso4217
 
 from aiohttp import ClientSession
 from aiohttp.client_exceptions import ClientConnectorError
 from async_timeout import timeout
-from pytz import all_timezones, timezone
+from pytz import all_timezones, timezone as tz
 
 from . import exceptions
 
+CACHETTL = "cachettl"
 COST = "cost"
 CURRENCY = "currency"
 DATA = "data"
@@ -30,6 +33,7 @@ SID = "sid"
 STATUS = "status"
 SUM = "sum"
 TYPE = "type"
+UTC_OFFSET = "utc_offset"
 VERSION = "version"
 
 _ALTERNATE_RES = "https://www.energyhive.com/mobile_proxy/"
@@ -47,10 +51,7 @@ class Efergy:
         self,
         api_key: str,
         session: ClientSession,
-        utc_offset: str | int = "0",
-        alt: bool = False,
-        cachettl: str | int = 60,
-        currency: str = None,
+        **kwargs: Any,
     ) -> None:
         """Initialize.
 
@@ -60,30 +61,41 @@ class Efergy:
 
         Set alt to true to use the alternate API endpoint.
         """
-        self._api_key = api_key
-        if utc_offset in all_timezones:
-            utc_offset = datetime.now(timezone(utc_offset)).strftime("%z")
-        self._utc_offset = utc_offset
         self._session = session
-        self._res = _ALTERNATE_RES if alt else _RES
-        self._cachettl = cachettl
         self.info = {}
-        self.info[CURRENCY] = currency
+        self._utc_offset = 0
+        self._cachettl = 60
+        self.update_params(api_key=api_key, **kwargs)
 
     def update_params(
         self,
         api_key: str = None,
-        utc_offset: str | int = None,
-        cachettl: str | int = None,
-        alt: bool = False,
-        currency: str = None,
+        **kwargs: Any,
     ) -> None:
-        """Update API key and UTC offset."""
+        """Update API key and UTC offset.
+
+        kwargs can include:
+        cachettl: int, alt: bool, utc_offset, and currency: ISO 4217 code.
+        """
         self._api_key = api_key if api_key else self._api_key
-        self._utc_offset = utc_offset if utc_offset else self._utc_offset
-        self._cachettl = cachettl if cachettl else self._cachettl
-        self._res = _ALTERNATE_RES if alt else _RES
-        self.info[CURRENCY] = currency if currency else self.info[CURRENCY]
+        if CACHETTL in kwargs:
+            self._cachettl = kwargs[CACHETTL]
+        self._res = _ALTERNATE_RES if "alt" in kwargs else _RES
+        if CURRENCY in kwargs:
+            for cty in list(iso4217.raw_table.values()):
+                if kwargs[CURRENCY] == cty["Ccy"]:
+                    self.info[CURRENCY] = kwargs[CURRENCY]
+                    break
+            if CURRENCY not in self.info:
+                raise exceptions.InvalidCurrency("Provided currency is invalid")
+        if UTC_OFFSET in kwargs:
+            utc_offset = str(kwargs[UTC_OFFSET])
+            if utc_offset in all_timezones:
+                self._utc_offset = datetime.now(tz(utc_offset)).strftime("%z")
+            elif utc_offset.isnumeric():
+                self._utc_offset = utc_offset
+            else:
+                raise exceptions.InvalidOffset("Provided offset is invalid")
 
     async def _async_req(self, url: str) -> str | list:
         """Send get request."""
@@ -106,12 +118,6 @@ class Efergy:
             raise exceptions.InvalidPeriod(
                 "Provided period is invalid. Options are: day, week, month, year"
             )
-        if (
-            ERROR in _data
-            and _data[ERROR][ID] == 400
-            and "offset" in _data[ERROR][MORE]
-        ):
-            raise exceptions.InvalidOffset("Provided offset is invalid")
         if ERROR in _data and _data[ERROR][ID] == 400:
             raise exceptions.DataError(_data)
         if ERROR in _data and _data[ERROR][ID] == 404:
@@ -152,26 +158,26 @@ class Efergy:
         """
         type_str = None
         if reading_type == INSTANT:
-            url = f"{self._res}getInstant?token={self._api_key}"
+            _url = f"{self._res}getInstant?token={self._api_key}"
             type_str = "reading"
         elif "energy" in reading_type:
-            url = (
+            _url = (
                 f"{self._res}getEnergy?token={self._api_key}&offset={self._utc_offset}"
             )
-            url = url + f"&period={period}"
+            _url = _url + f"&period={period}"
             type_str = SUM
         elif COST in reading_type:
-            url = f"{self._res}getCost?token={self._api_key}&offset={self._utc_offset}"
-            url = url + f"&period={period}"
+            _url = f"{self._res}getCost?token={self._api_key}&offset={self._utc_offset}"
+            _url = _url + f"&period={period}"
             type_str = SUM
         elif reading_type == "budget":
-            url = f"{self._res}getBudget?token={self._api_key}"
+            _url = f"{self._res}getBudget?token={self._api_key}"
             type_str = STATUS
         elif reading_type == "current_values":
-            url = f"{self._res}getCurrentValuesSummary?token={self._api_key}"
-        _data = await self._async_req(url)
+            _url = f"{self._res}getCurrentValuesSummary?token={self._api_key}"
+        _data = await self._async_req(_url)
         if (
-            self.info[CURRENCY]
+            CURRENCY in self.info
             and COST in reading_type
             and self.info[CURRENCY] != _data["units"]
         ):
@@ -214,7 +220,7 @@ class Efergy:
         totime: str | int = None,
         aggperiod: str = DEFAULT_PERIOD,
         type_str: str = None,
-        aggfunc: str = "sum",
+        aggfunc: str = SUM,
         cachekey: str = None,
     ) -> dict:
         """Return timeseries of aggregated devices on a given channel for an hid."""
@@ -470,7 +476,7 @@ class Efergy:
         fromtime: str | int,
         totime: str | int,
         aggperiod: str = DEFAULT_PERIOD,
-        aggfunc: str = "sum",
+        aggfunc: str = SUM,
         cache: bool = True,
         datatype: str = DEFAULT_TYPE,
     ) -> dict:

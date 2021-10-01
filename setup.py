@@ -6,7 +6,7 @@ with open("README.md", "r") as fh:
 
 setuptools.setup(
     name='pyefergy',
-    version='0.0.4',
+    version='0.1.0',
     author='Robert Hillis',
     author_email='tkdrob4390@yahoo.com',
     description='An API library for Efergy energy meters.',
@@ -14,7 +14,7 @@ setuptools.setup(
     long_description_content_type="text/markdown",
     url='https://github.com/tkdrob/pyefergy',
     packages=setuptools.find_packages(),
-    install_requires=[],
+    install_requires=['iso4217==1.6.20180829'],
     classifiers=[
         "Programming Language :: Python :: 3",
         "License :: OSI Approved :: MIT License",

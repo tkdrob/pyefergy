@@ -21,6 +21,10 @@ class InvalidOffset(Exception):
     """The provided UTC offset is invalid."""
 
 
+class InvalidCurrency(Exception):
+    """The provided UTC offset is invalid."""
+
+
 class ServiceError(Exception):
     """The was an error getting data from the hub."""
 
