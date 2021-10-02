@@ -14,7 +14,10 @@ setuptools.setup(
     long_description_content_type="text/markdown",
     url='https://github.com/tkdrob/pyefergy',
     packages=setuptools.find_packages(),
-    install_requires=['iso4217==1.6.20180829'],
+    install_requires=[
+        'aiohttp>=3.7.4,<4'
+        'iso4217==1.6.20180829'
+    ],
     classifiers=[
         "Programming Language :: Python :: 3",
         "License :: OSI Approved :: MIT License",
