@@ -17,6 +17,7 @@ setuptools.setup(
     install_requires=[
         'aiohttp>=3.7.4,<4',
         'iso4217==1.6.20180829',
+        'pytz',
     ],
     classifiers=[
         "Programming Language :: Python :: 3",
