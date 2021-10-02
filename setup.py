@@ -15,6 +15,7 @@ setuptools.setup(
     url='https://github.com/tkdrob/pyefergy',
     packages=setuptools.find_packages(),
     install_requires=[
+        'aiohttp>=3.7.4,<4',
         'iso4217==1.6.20180829',
         'pytz',
     ],
