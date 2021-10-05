@@ -16,7 +16,7 @@ setuptools.setup(
     packages=setuptools.find_packages(),
     install_requires=[
         'aiohttp>=3.4.4',
-        'iso4217',
+        'iso4217>=1.2.20150619',
         'pytz',
     ],
     classifiers=[
