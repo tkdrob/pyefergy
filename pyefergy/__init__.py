@@ -50,7 +50,7 @@ class Efergy:
     def __init__(
         self,
         api_key: str,
-        session: ClientSession,
+        session: ClientSession = None,
         **kwargs: Any,
     ) -> None:
         """Initialize.
@@ -61,7 +61,7 @@ class Efergy:
 
         Set alt to true to use the alternate API endpoint.
         """
-        self._session = session
+        self._session = ClientSession() if session is None else session
         self.info = {}
         self._utc_offset = 0
         self._cachettl = 60
