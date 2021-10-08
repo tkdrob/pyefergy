@@ -130,13 +130,13 @@ class Efergy:
             )
         return _data
 
-    async def async_get_sids(self) -> str:
+    async def async_get_sids(self) -> None:
         """Get current values sids."""
         url = f"{self._res}getCurrentValuesSummary?token={self._api_key}"
         sids = []
         for sid in await self._async_req(url):
             sids.append(sid[SID])
-        return sids
+        self.info["sids"] = sids
 
     async def async_get_reading(
         self,
@@ -454,7 +454,7 @@ class Efergy:
         _url = f"{self._res}getPulse?token={self._api_key}&sid={sid}"
         return await self._async_req(_url)
 
-    async def async_status(self) -> dict:
+    async def async_status(self, get_sids: bool = False) -> dict:
         """Retrieve the device status as a list of statuses."""
         _data = await self._async_req(f"{self._res}getStatus?token={self._api_key}")
         self.info[HID] = _data[HID]
@@ -462,6 +462,8 @@ class Efergy:
         self.info[STATUS] = _data[LISTOFMACS][0][STATUS]
         self.info[TYPE] = _data[LISTOFMACS][0][TYPE]
         self.info[VERSION] = _data[LISTOFMACS][0][VERSION]
+        if get_sids:
+            await self.async_get_sids()
         return _data
 
     async def async_tarrif(self) -> dict:
