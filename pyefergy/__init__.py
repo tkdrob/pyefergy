@@ -153,6 +153,7 @@ class Efergy:
         budget: Currently set budget and status of that budget.
         current_values: Values for each sensor attached to the account.
 
+        The API treats monthly data as 28 days as months vary in the number of days.
         'reading type' for energy and cost may include
         extra characters for easier keying by period.
         """
