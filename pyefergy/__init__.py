@@ -91,7 +91,8 @@ class Efergy:
         if UTC_OFFSET in kwargs:
             utc_offset = str(kwargs[UTC_OFFSET])
             if utc_offset in all_timezones:
-                self._utc_offset = datetime.now(tz(utc_offset)).strftime("%z")
+                offset = int(datetime.now(tz(utc_offset)).strftime("%z"))
+                self._utc_offset = -(int(offset/100*60))
             elif utc_offset.isnumeric():
                 self._utc_offset = utc_offset
             else:
