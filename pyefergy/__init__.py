@@ -163,14 +163,12 @@ class Efergy:
             _url = f"{self._res}getInstant?token={self._api_key}"
             type_str = "reading"
         elif "energy" in reading_type:
-            _url = (
-                f"{self._res}getEnergy?token={self._api_key}&offset={self._utc_offset}"
-            )
-            _url = _url + f"&period={period}"
+            _url = f"{self._res}getEnergy?token={self._api_key}"
+            _url = f"{_url}&offset={self._utc_offset}&period={period}"
             type_str = SUM
         elif COST in reading_type:
-            _url = f"{self._res}getCost?token={self._api_key}&offset={self._utc_offset}"
-            _url = _url + f"&period={period}"
+            _url = f"{self._res}getCost?token={self._api_key}"
+            _url = f"{_url}&offset={self._utc_offset}&period={period}"
             type_str = SUM
         elif reading_type == "budget":
             _url = f"{self._res}getBudget?token={self._api_key}"
@@ -213,7 +211,7 @@ class Efergy:
         By default the usage so far "this month" is returned.
         """
         _url = f"{self._res}getCarbon?token={self._api_key}&offset={self._utc_offset}"
-        _url = _url + f"&period={period}&fromTime={fromtime}&toTime={totime}"
+        _url = f"{_url}&period={period}&fromTime={fromtime}&toTime={totime}"
         return await self._async_req(_url)
 
     async def async_channel_aggregated(
@@ -227,9 +225,9 @@ class Efergy:
     ) -> dict:
         """Return timeseries of aggregated devices on a given channel for an hid."""
         _url = f"{self._res}getChannelAggregated?token={self._api_key}"
-        _url = _url + f"&offset={self._utc_offset}&fromTime={fromtime}&toTime={totime}"
-        _url = _url + f"&aggPeriod{aggperiod}&cacheTTL={self._cachettl}&type={type_str}"
-        _url = _url + f"&aggFunc={aggfunc}&cacheKey={cachekey}"
+        _url = f"{_url}&offset={self._utc_offset}&fromTime={fromtime}&toTime={totime}"
+        _url = f"{_url}&aggPeriod{aggperiod}&cacheTTL={self._cachettl}&type={type_str}"
+        _url = f"{_url}&aggFunc={aggfunc}&cacheKey={cachekey}"
         return await self._async_req(_url)
 
     async def async_comp_combined(self) -> dict:
@@ -238,7 +236,8 @@ class Efergy:
         for day, week and month. The comparisons are also available elsewhere separately
         (getCompDay etc.)
         """
-        _url = f"{self._res}getCompCombined?token={self._api_key}&offset={self._utc_offset}"
+        _url = f"{self._res}getCompCombined?token={self._api_key}"
+        _url = f"{_url}&offset={self._utc_offset}"
         return await self._async_req(_url)
 
     async def async_comp_day(self) -> dict:
@@ -255,7 +254,7 @@ class Efergy:
         and all other households over the period of a month.
         """
         _url = f"{self._res}getCompMonth?token={self._api_key}"
-        _url = _url + f"&offset={self._utc_offset}"
+        _url = f"{_url}&offset={self._utc_offset}"
         return await self._async_req(_url)
 
     async def async_comp_week(self) -> dict:
@@ -282,10 +281,10 @@ class Efergy:
         cachekey: str = None,
     ) -> dict:
         """Return timeseries of consumed/cost and CO2."""
-        _url = f"{self._res}getConsumptionCostCO2Graph?token={self._api_key}&offset="
-        _url = _url + f"{self._utc_offset}&aggPeriod={aggperiod}&cacheTTL="
-        _url = _url + f"{self._cachettl}&cacheKey={cachekey or aggperiod}"
-        _url = _url + f"&fromTime={fromtime}&toTime={totime}"
+        _url = f"{self._res}getConsumptionCostCO2Graph?token={self._api_key}"
+        _url = f"{_url}&offset={self._utc_offset}&aggPeriod={aggperiod}"
+        _url = f"{_url}&cacheTTL={self._cachettl}&cacheKey={cachekey or aggperiod}"
+        _url = f"{_url}&fromTime={fromtime}&toTime={totime}"
         _data = await self._async_req(_url)
         return _data
 
@@ -300,8 +299,8 @@ class Efergy:
         vs that imported. Only useful if PWER and PWER_GAC channels are present.
         """
         _url = f"{self._res}getConsumptionGeneratedAndImport?token={self._api_key}"
-        _url = _url + f"&offset={self._utc_offset}&cacheTTL={self._cachettl}&cacheKey="
-        _url = _url + f"{cachekey}&fromTime={fromtime}&toTime={totime}"
+        _url = f"{_url}&offset={self._utc_offset}&cacheTTL={self._cachettl}"
+        _url = f"{_url}&cacheKey={cachekey}&fromTime={fromtime}&toTime={totime}"
         _data = await self._async_req(_url)
         return _data
 
@@ -318,7 +317,7 @@ class Efergy:
         Data will be returned at a minute level of resolution.
         """
         _url = f"{self._res}getDay?token={self._api_key}&offset={self._utc_offset}"
-        _url = _url + f"&getPreviousPeriod={getpreviousperiod}&cache={cache}"
+        _url = f"{_url}&getPreviousPeriod={getpreviousperiod}&cache={cache}"
         _data = await self._async_req(_url)
         return _data[DATA]
 
@@ -342,7 +341,7 @@ class Efergy:
         or cost (if tariff set).
         """
         _url = f"{self._res}getForecast?token={self._api_key}&offset={self._utc_offset}"
-        _url = _url + f"&period={period}"
+        _url = f"{_url}&period={period}"
         return await self._async_req(_url)
 
     async def async_generated_consumption_export(
@@ -357,8 +356,8 @@ class Efergy:
         Only useful if PWER and PWER_GAC channels are present.
         """
         _url = f"{self._res}getGeneratedConsumptionAndExport?token={self._api_key}"
-        _url = _url + f"&offset={self._utc_offset}&fromTime={fromtime}&toTime="
-        _url = _url + f"{totime}&cacheTTL={self._cachettl}&cacheKey={cachekey}"
+        _url = f"{_url}&offset={self._utc_offset}&fromTime={fromtime}&toTime="
+        _url = f"{_url}{totime}&cacheTTL={self._cachettl}&cacheKey={cachekey}"
         return await self._async_req(_url)
 
     async def async_generated_energy_revenue_carbon(
@@ -369,8 +368,8 @@ class Efergy:
     ) -> dict:
         """Return a timeseries of consumed, revenue and c02 saved."""
         _url = f"{self._res}getGeneratedEnergyRevenueCarbon?token={self._api_key}"
-        _url = _url + f"&offset={self._utc_offset}&fromTime={fromtime}&toTime="
-        _url = _url + f"{totime}&cacheTTL={self._cachettl}&cacheKey={cachekey}"
+        _url = f"{_url}&offset={self._utc_offset}&fromTime={fromtime}&toTime="
+        _url = f"{_url}{totime}&cacheTTL={self._cachettl}&cacheKey={cachekey}"
         return await self._async_req(_url)
 
     async def async_generated_consumption_graph(
@@ -385,9 +384,9 @@ class Efergy:
         Only useful if PWER and PWER_GAC channels are present.
         """
         _url = f"{self._res}getGenerationConsumptionGraph?token={self._api_key}"
-        _url = _url + f"&offset={self._utc_offset}&fromTime={fromtime}&toTime="
-        _url = _url + f"{totime}&cacheTTL={self._cachettl}&cacheKey={cachekey}"
-        _url = _url + f"&aggPeriod={aggperiod}"
+        _url = f"{_url}&offset={self._utc_offset}&fromTime={fromtime}&toTime="
+        _url = f"{_url}{totime}&cacheTTL={self._cachettl}&cacheKey={cachekey}"
+        _url = f"{_url}&aggPeriod={aggperiod}"
         return await self._async_req(_url)
 
     async def async_generated_consumption_graph_costrev(
@@ -403,9 +402,9 @@ class Efergy:
         Only useful if PWER and PWER_GAC channels are present.
         """
         _url = f"{self._res}getGenerationConsumptionGraphCostRevenue?token="
-        _url = _url + f"{self._api_key}&aggPeriod={aggperiod}"
-        _url = _url + f"&offset={self._utc_offset}&fromTime={fromtime}&toTime="
-        _url = _url + f"{totime}&cacheTTL={self._cachettl}&cacheKey={cachekey}"
+        _url = f"{_url}{self._api_key}&aggPeriod={aggperiod}"
+        _url = f"{_url}&offset={self._utc_offset}&fromTime={fromtime}&toTime="
+        _url = f"{_url}{totime}&cacheTTL={self._cachettl}&cacheKey={cachekey}"
         return await self._async_req(_url)
 
     async def async_historical_values(
@@ -445,8 +444,8 @@ class Efergy:
         Data will be returned at a day level of resolution.
         """
         _url = f"{self._res}getMonth?token={self._api_key}&offset={self._utc_offset}"
-        _url = _url + f"&getPreviousPeriod={getpreviousperiod}&cache={cache}"
-        _url = _url + f"&dataType={datatype}"
+        _url = f"{_url}&getPreviousPeriod={getpreviousperiod}&cache={cache}"
+        _url = f"{_url}&dataType={datatype}"
         _data = await self._async_req(_url)
         return _data[DATA]
 
@@ -491,9 +490,9 @@ class Efergy:
         data_type: cost or kwh
         """
         _url = f"{self._res}getTimeSeries?token={self._api_key}&offset="
-        _url = _url + f"{self._utc_offset}&fromTime={fromtime}&toTime={totime}"
-        _url = _url + f"&appPeriod={aggperiod}&aggFunc={aggfunc}&cache="
-        _url = _url + f"{cache}&dataType={datatype}"
+        _url = f"{_url}{self._utc_offset}&fromTime={fromtime}&toTime={totime}"
+        _url = f"{_url}&appPeriod={aggperiod}&aggFunc={aggfunc}&cache="
+        _url = f"{_url}{cache}&dataType={datatype}"
         _data = await self._async_req(_url)
         return _data[DATA]
 
@@ -502,7 +501,7 @@ class Efergy:
     ) -> dict:
         """Get the current weather for the location of the HID."""
         _url = f"{self._res}getWeather?token={self._api_key}&city={city}&country="
-        _url = _url + f"{country}&timestamp={timestamp}"
+        _url = f"{_url}{country}&timestamp={timestamp}"
         return await self._async_req(_url)
 
     async def async_week(
@@ -517,8 +516,8 @@ class Efergy:
         Data will be returned at a hour level of resolution.
         """
         _url = f"{self._res}getWeek?token={self._api_key}&offset={self._utc_offset}"
-        _url = _url + f"&getPreviousPeriod={getpreviousperiod}&cache={cache}"
-        _url = _url + f"&dataType={datatype}"
+        _url = f"{_url}&getPreviousPeriod={getpreviousperiod}&cache={cache}"
+        _url = f"{_url}&dataType={datatype}"
         _data = await self._async_req(_url)
         return _data[DATA]
 
@@ -533,7 +532,7 @@ class Efergy:
         Data will be returned at a month level of resolution.
         """
         _url = f"{self._res}getYear?token={self._api_key}&offset={self._utc_offset}"
-        _url = _url + f"&cache={cache}&dataType={datatype}"
+        _url = f"{_url}&cache={cache}&dataType={datatype}"
         _data = await self._async_req(_url)
         return _data[DATA]
 
