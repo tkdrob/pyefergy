@@ -460,7 +460,9 @@ class Efergy:
         self.info[HID] = _data[HID]
         self.info[MAC] = _data[LISTOFMACS][0][MAC]
         self.info[STATUS] = _data[LISTOFMACS][0][STATUS]
-        self.info[TYPE] = _data[LISTOFMACS][0][TYPE]
+        self.info[TYPE] = None
+        if TYPE in _data[LISTOFMACS][0]:
+            self.info[TYPE] = _data[LISTOFMACS][0][TYPE]
         self.info[VERSION] = _data[LISTOFMACS][0][VERSION]
         if get_sids:
             await self.async_get_sids()
