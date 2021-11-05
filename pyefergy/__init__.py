@@ -177,7 +177,7 @@ class Efergy:
             and COST in reading_type
             and self.info[CURRENCY] != _data["units"]
         ):
-            _LOGGER.warning(
+            _LOGGER.debug(
                 "Currency provided does not match device settings. "
                 "This can affect energy cost statistics"
             )
