@@ -91,8 +91,8 @@ class Efergy:
         if UTC_OFFSET in kwargs:
             utc_offset = str(kwargs[UTC_OFFSET])
             if utc_offset in all_timezones:
-                offset = int(datetime.now(tz(utc_offset)).strftime("%z"))
-                self._utc_offset = -(int(offset/100*60))
+                utc_offset = int(datetime.now(tz(utc_offset)).strftime("%z"))
+                self._utc_offset = -(int(utc_offset/100*60))
             elif utc_offset.isnumeric():
                 self._utc_offset = utc_offset
             else:
@@ -111,15 +111,11 @@ class Efergy:
             raise exceptions.DataError(_data) from ex
         if DESC in _data and _data[DESC] == "bad token":
             raise exceptions.InvalidAuth("Provided API token is invalid.")
-        if (
-            ERROR in _data
-            and _data[ERROR][ID] == 400
-            and "period" in _data[ERROR][MORE]
-        ):
-            raise exceptions.InvalidPeriod(
-                "Provided period is invalid. Options are: day, week, month, year"
-            )
         if ERROR in _data and _data[ERROR][ID] == 400:
+            if "period" in _data[ERROR][MORE]:
+                raise exceptions.InvalidPeriod(
+                    "Provided period is invalid. Options are: day, week, month, year"
+                )
             raise exceptions.DataError(_data)
         if ERROR in _data and _data[ERROR][ID] == 404:
             raise exceptions.APICallLimit(
