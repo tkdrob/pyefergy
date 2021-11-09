@@ -1,16 +1,14 @@
 """An API library for Efergy energy meters."""
 from __future__ import annotations
 
-from asyncio import get_running_loop
 from asyncio.exceptions import TimeoutError as timeouterr
 from datetime import datetime
 import logging
 from typing import Any
 import iso4217
 
-from aiohttp import ClientSession
+from aiohttp import ClientSession, ClientTimeout
 from aiohttp.client_exceptions import ClientConnectorError
-from async_timeout import timeout
 from pytz import all_timezones, timezone as tz
 
 from . import exceptions
@@ -102,9 +100,11 @@ class Efergy:
         """Send get request."""
         _data = None
         try:
-            async with timeout(TIMEOUT, loop=get_running_loop()):
-                _response = await self._session.get(url)
-                _data = await _response.json(content_type="text/html")
+            _response = await self._session.get(
+                url=url,
+                timeout=ClientTimeout(TIMEOUT),
+            )
+            _data = await _response.json(content_type="text/html")
         except (timeouterr, ClientConnectorError) as ex:
             raise exceptions.ConnectError() from ex
         except (ValueError, KeyError) as ex:
