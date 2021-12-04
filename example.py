@@ -12,4 +12,5 @@ async def async_example():
     async with api:
         print(await api.async_get_reading("instant_readings"))
 
+
 asyncio.get_event_loop().run_until_complete(async_example())

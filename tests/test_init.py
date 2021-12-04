@@ -179,8 +179,13 @@ async def test_async_carbon(aresponses):
         match_querystring=True,
     )
     async with ClientSession() as session:
-        client = Efergy(API_KEY, offset="America/New_York", session=session, utc_offset="America/New_York")
-        data = await client.async_carbon(period = "day", fromtime=0, totime=1)
+        client = Efergy(
+            API_KEY,
+            offset="America/New_York",
+            session=session,
+            utc_offset="America/New_York",
+        )
+        data = await client.async_carbon(period="day", fromtime=0, totime=1)
 
         assert data["sum"] == "47.84"
 
@@ -201,7 +206,14 @@ async def test_async_channel_aggregated(aresponses):
     )
     async with ClientSession() as session:
         client = Efergy(API_KEY, session=session, utc_offset="America/New_York")
-        data = await client.async_channel_aggregated(fromtime=0, totime=1, aggperiod="week", type_str="none", aggfunc="sum", cachekey=3)
+        data = await client.async_channel_aggregated(
+            fromtime=0,
+            totime=1,
+            aggperiod="week",
+            type_str="none",
+            aggfunc="sum",
+            cachekey=3,
+        )
 
         assert data["status"] == "ok"
 
@@ -327,7 +339,9 @@ async def test_async_consumption_co2_graph(aresponses):
     )
     async with ClientSession() as session:
         client = Efergy(API_KEY, session=session, utc_offset="America/New_York")
-        data = await client.async_consumption_co2_graph(fromtime=1637884800, totime=1638489600000, aggperiod="week", cachekey=3)
+        data = await client.async_consumption_co2_graph(
+            fromtime=1637884800, totime=1638489600000, aggperiod="week", cachekey=3
+        )
 
         assert data["status"] == "ok"
 
@@ -348,7 +362,9 @@ async def test_async_consumption_import(aresponses):
     )
     async with ClientSession() as session:
         client = Efergy(API_KEY, session=session, utc_offset="America/New_York")
-        data = await client.async_generated_consumption_import(fromtime=1637884800, totime=1638489600, cachekey=3)
+        data = await client.async_generated_consumption_import(
+            fromtime=1637884800, totime=1638489600, cachekey=3
+        )
 
         assert data == {"consumption": 0, "generated": 0, "imported": 0}
 
@@ -369,9 +385,16 @@ async def test_async_generated_consumption_export(aresponses):
     )
     async with ClientSession() as session:
         client = Efergy(API_KEY, session=session, utc_offset="America/New_York")
-        data = await client.async_generated_consumption_export(fromtime=1637884800, totime=1638489600, cachekey=3)
+        data = await client.async_generated_consumption_export(
+            fromtime=1637884800, totime=1638489600, cachekey=3
+        )
 
-        assert data == {"consumedInHome": 0, "diverted": 0, "exported": 0, "generated": 0}
+        assert data == {
+            "consumedInHome": 0,
+            "diverted": 0,
+            "exported": 0,
+            "generated": 0,
+        }
 
 
 @pytest.mark.asyncio
@@ -558,7 +581,9 @@ async def test_async_generated_energy_revenue_carbon(aresponses):
     )
     async with ClientSession() as session:
         client = Efergy(API_KEY, session=session, utc_offset="America/New_York")
-        data = await client.async_generated_energy_revenue_carbon(1637884800, 1638489600, aggperiod="week", cachekey=3)
+        data = await client.async_generated_energy_revenue_carbon(
+            1637884800, 1638489600, aggperiod="week", cachekey=3
+        )
 
         assert data["status"] == "ok"
 
@@ -579,7 +604,9 @@ async def test_async_generated_consumption_graph(aresponses):
     )
     async with ClientSession() as session:
         client = Efergy(API_KEY, session=session, utc_offset="America/New_York")
-        data = await client.async_generated_consumption_graph(1637884800, 1638489600, aggperiod="week", cachekey=3)
+        data = await client.async_generated_consumption_graph(
+            1637884800, 1638489600, aggperiod="week", cachekey=3
+        )
 
         assert data["status"] == "ok"
 
@@ -600,7 +627,9 @@ async def test_async_generated_consumption_graph_costrev(aresponses):
     )
     async with ClientSession() as session:
         client = Efergy(API_KEY, session=session)
-        data = await client.async_generated_consumption_graph_costrev(1637884800, 1638489600, aggperiod="week", cachekey=3)
+        data = await client.async_generated_consumption_graph_costrev(
+            1637884800, 1638489600, aggperiod="week", cachekey=3
+        )
 
         assert data["status"] == "ok"
 
@@ -796,7 +825,14 @@ async def test_async_time_series(aresponses):
     )
     async with ClientSession() as session:
         client = Efergy(API_KEY, session=session, utc_offset="America/New_York")
-        data = await client.async_time_series(1637884800, 1638489600, aggperiod="week", aggfunc="sum", cache=True, datatype="cost")
+        data = await client.async_time_series(
+            1637884800,
+            1638489600,
+            aggperiod="week",
+            aggfunc="sum",
+            cache=True,
+            datatype="cost",
+        )
 
         assert data == {"data": {"1637884800000": ["undef"]}, "status": "ok"}
 
