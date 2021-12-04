@@ -21,7 +21,7 @@ async def test_async_get_sids(aresponses):
     """Test getting sids."""
     aresponses.add(
         "engage.efergy.com",
-        "/mobile_proxy/getCurrentValuesSummary?token=ur1234567-0abc12de3f456gh7ij89k012",
+        "/mobile_proxy/getCurrentValuesSummary?token=ur1234567-0abc12de3f456gh7ij89k012&offset=300",
         "GET",
         aresponses.Response(
             status=200,
@@ -31,7 +31,7 @@ async def test_async_get_sids(aresponses):
         match_querystring=True,
     )
     async with ClientSession() as session:
-        client = Efergy(API_KEY, session=session)
+        client = Efergy(API_KEY, session=session, utc_offset="America/New_York")
         await client.async_get_sids()
 
         assert client.info == {"sids": ["728386", "0", "728387"]}
@@ -42,7 +42,7 @@ async def test_async_get_instant(aresponses):
     """Test getting instant reading."""
     aresponses.add(
         "engage.efergy.com",
-        "/mobile_proxy/getInstant?token=ur1234567-0abc12de3f456gh7ij89k012",
+        "/mobile_proxy/getInstant?token=ur1234567-0abc12de3f456gh7ij89k012&offset=300",
         "GET",
         aresponses.Response(
             status=200,
@@ -52,7 +52,7 @@ async def test_async_get_instant(aresponses):
         match_querystring=True,
     )
     async with ClientSession() as session:
-        client = Efergy(API_KEY, session=session)
+        client = Efergy(API_KEY, session=session, utc_offset="America/New_York")
         data = await client.async_get_reading("instant_readings")
 
         assert data == 1580
@@ -105,7 +105,7 @@ async def test_async_get_budget(aresponses):
     """Test getting budget."""
     aresponses.add(
         "engage.efergy.com",
-        "/mobile_proxy/getBudget?token=ur1234567-0abc12de3f456gh7ij89k012",
+        "/mobile_proxy/getBudget?token=ur1234567-0abc12de3f456gh7ij89k012&offset=300",
         "GET",
         aresponses.Response(
             status=200,
@@ -115,7 +115,7 @@ async def test_async_get_budget(aresponses):
         match_querystring=True,
     )
     async with ClientSession() as session:
-        client = Efergy(API_KEY, session=session)
+        client = Efergy(API_KEY, session=session, utc_offset="America/New_York")
         data = await client.async_get_reading("budget")
 
         assert data == "ok"
@@ -126,7 +126,7 @@ async def test_async_get_current_values(aresponses):
     """Test getting current values."""
     aresponses.add(
         "engage.efergy.com",
-        "/mobile_proxy/getCurrentValuesSummary?token=ur1234567-0abc12de3f456gh7ij89k012",
+        "/mobile_proxy/getCurrentValuesSummary?token=ur1234567-0abc12de3f456gh7ij89k012&offset=300",
         "GET",
         aresponses.Response(
             status=200,
@@ -136,7 +136,7 @@ async def test_async_get_current_values(aresponses):
         match_querystring=True,
     )
     async with ClientSession() as session:
-        client = Efergy(API_KEY, session=session)
+        client = Efergy(API_KEY, session=session, utc_offset="America/New_York")
         data = await client.async_get_reading("current_values")
 
         assert data["0"] == 1808
@@ -149,7 +149,7 @@ async def test_async_hid_simple_tarrif(aresponses):
     """Test creating hid simple tarrif."""
     aresponses.add(
         "engage.efergy.com",
-        "/mobile_proxy/createHidSimpleTariff?token=ur1234567-0abc12de3f456gh7ij89k012&cost_per_kwh=0.05",
+        "/mobile_proxy/createHidSimpleTariff?token=ur1234567-0abc12de3f456gh7ij89k012&offset=300&cost_per_kwh=0.05",
         "GET",
         aresponses.Response(
             status=200,
@@ -158,7 +158,7 @@ async def test_async_hid_simple_tarrif(aresponses):
         match_querystring=True,
     )
     async with ClientSession() as session:
-        client = Efergy(API_KEY, session=session)
+        client = Efergy(API_KEY, session=session, utc_offset="America/New_York")
         response = await client.async_hid_simple_tarrif(0.05)
 
         assert response == {}
@@ -181,7 +181,6 @@ async def test_async_carbon(aresponses):
     async with ClientSession() as session:
         client = Efergy(
             API_KEY,
-            offset="America/New_York",
             session=session,
             utc_offset="America/New_York",
         )
@@ -402,7 +401,7 @@ async def test_async_country_list(aresponses):
     """Test getting consumption co2 data."""
     aresponses.add(
         "engage.efergy.com",
-        "/mobile_proxy/getCountryList?token=ur1234567-0abc12de3f456gh7ij89k012",
+        "/mobile_proxy/getCountryList?token=ur1234567-0abc12de3f456gh7ij89k012&offset=300",
         "GET",
         aresponses.Response(
             status=200,
@@ -412,7 +411,7 @@ async def test_async_country_list(aresponses):
         match_querystring=True,
     )
     async with ClientSession() as session:
-        client = Efergy(API_KEY, session=session)
+        client = Efergy(API_KEY, session=session, utc_offset="America/New_York")
         data = await client.async_country_list()
 
         assert data["UNITED KINGDOM"] == "230"
@@ -507,7 +506,7 @@ async def test_async_estimated_combined(aresponses):
     """Test getting estimated combined usage data."""
     aresponses.add(
         "engage.efergy.com",
-        "/mobile_proxy/getEstCombined?token=ur1234567-0abc12de3f456gh7ij89k012",
+        "/mobile_proxy/getEstCombined?token=ur1234567-0abc12de3f456gh7ij89k012&offset=300",
         "GET",
         aresponses.Response(
             status=200,
@@ -517,7 +516,7 @@ async def test_async_estimated_combined(aresponses):
         match_querystring=True,
     )
     async with ClientSession() as session:
-        client = Efergy(API_KEY, session=session)
+        client = Efergy(API_KEY, session=session, utc_offset="America/New_York")
         data = await client.async_estimated_combined()
 
         assert data["day_kwh"] == {"estimate": 11.73}
@@ -528,7 +527,7 @@ async def test_async_first_data(aresponses):
     """Test getting first data."""
     aresponses.add(
         "engage.efergy.com",
-        "/mobile_proxy/getFirstData?token=ur1234567-0abc12de3f456gh7ij89k012",
+        "/mobile_proxy/getFirstData?token=ur1234567-0abc12de3f456gh7ij89k012&offset=300",
         "GET",
         aresponses.Response(
             status=200,
@@ -538,7 +537,7 @@ async def test_async_first_data(aresponses):
         match_querystring=True,
     )
     async with ClientSession() as session:
-        client = Efergy(API_KEY, session=session)
+        client = Efergy(API_KEY, session=session, utc_offset="America/New_York")
         data = await client.async_first_data()
 
         assert data["status"] == "ok"
@@ -616,7 +615,7 @@ async def test_async_generated_consumption_graph_costrev(aresponses):
     """Test getting generated consumption cost and revenue graph data."""
     aresponses.add(
         "engage.efergy.com",
-        "/mobile_proxy/getGenerationConsumptionGraphCostRevenue?token=ur1234567-0abc12de3f456gh7ij89k012&aggPeriod=week&offset=0&fromTime=1637884800&toTime=1638489600&cacheTTL=60&cacheKey=3",
+        "/mobile_proxy/getGenerationConsumptionGraphCostRevenue?token=ur1234567-0abc12de3f456gh7ij89k012&offset=0&aggPeriod=week&fromTime=1637884800&toTime=1638489600&cacheTTL=60&cacheKey=3",
         "GET",
         aresponses.Response(
             status=200,
@@ -639,7 +638,7 @@ async def test_async_historical_values(aresponses):
     """Test getting historical data."""
     aresponses.add(
         "engage.efergy.com",
-        "/mobile_proxy/getHV?token=ur1234567-0abc12de3f456gh7ij89k012&period=week&type=PWER",
+        "/mobile_proxy/getHV?token=ur1234567-0abc12de3f456gh7ij89k012&offset=300&period=week&type=PWER",
         "GET",
         aresponses.Response(
             status=200,
@@ -649,7 +648,7 @@ async def test_async_historical_values(aresponses):
         match_querystring=True,
     )
     async with ClientSession() as session:
-        client = Efergy(API_KEY, session=session)
+        client = Efergy(API_KEY, session=session, utc_offset="America/New_York")
         data = await client.async_historical_values(period="week")
 
         assert data["status"] == "ok"
@@ -660,7 +659,7 @@ async def test_async_household(aresponses):
     """Test getting household data."""
     aresponses.add(
         "engage.efergy.com",
-        "/mobile_proxy/getHousehold?token=ur1234567-0abc12de3f456gh7ij89k012",
+        "/mobile_proxy/getHousehold?token=ur1234567-0abc12de3f456gh7ij89k012&offset=300",
         "GET",
         aresponses.Response(
             status=200,
@@ -670,7 +669,7 @@ async def test_async_household(aresponses):
         match_querystring=True,
     )
     async with ClientSession() as session:
-        client = Efergy(API_KEY, session=session)
+        client = Efergy(API_KEY, session=session, utc_offset="America/New_York")
         data = await client.async_household()
 
         assert data["ageOfProperty"] == "5"
@@ -681,7 +680,7 @@ async def test_async_household_data_reference(aresponses):
     """Test getting household data reference."""
     aresponses.add(
         "engage.efergy.com",
-        "/mobile_proxy/getHouseholdDataReference?token=ur1234567-0abc12de3f456gh7ij89k012",
+        "/mobile_proxy/getHouseholdDataReference?token=ur1234567-0abc12de3f456gh7ij89k012&offset=300",
         "GET",
         aresponses.Response(
             status=200,
@@ -691,7 +690,7 @@ async def test_async_household_data_reference(aresponses):
         match_querystring=True,
     )
     async with ClientSession() as session:
-        client = Efergy(API_KEY, session=session)
+        client = Efergy(API_KEY, session=session, utc_offset="America/New_York")
         data = await client.async_household_data_reference()
 
         assert data["profileoptions"]["ageOfProperty"]["values"][0]["key"] == "Pre 1851"
@@ -702,7 +701,7 @@ async def test_async_mac(aresponses):
     """Test getting mac addresses."""
     aresponses.add(
         "engage.efergy.com",
-        "/mobile_proxy/getMAC?token=ur1234567-0abc12de3f456gh7ij89k012",
+        "/mobile_proxy/getMAC?token=ur1234567-0abc12de3f456gh7ij89k012&offset=300",
         "GET",
         aresponses.Response(
             status=200,
@@ -712,7 +711,7 @@ async def test_async_mac(aresponses):
         match_querystring=True,
     )
     async with ClientSession() as session:
-        client = Efergy(API_KEY, session=session)
+        client = Efergy(API_KEY, session=session, utc_offset="America/New_York")
         data = await client.async_mac()
 
         assert data["listOfMacs"][0]["mac"] == "0004A3111111"
@@ -723,7 +722,7 @@ async def test_async_mac_status(aresponses):
     """Test getting mac address data."""
     aresponses.add(
         "engage.efergy.com",
-        "/mobile_proxy/getMACStatus?token=ur1234567-0abc12de3f456gh7ij89k012&mac_address=0004A3905474",
+        "/mobile_proxy/getMACStatus?token=ur1234567-0abc12de3f456gh7ij89k012&offset=300&mac_address=0004A3905474",
         "GET",
         aresponses.Response(
             status=200,
@@ -733,7 +732,7 @@ async def test_async_mac_status(aresponses):
         match_querystring=True,
     )
     async with ClientSession() as session:
-        client = Efergy(API_KEY, session=session)
+        client = Efergy(API_KEY, session=session, utc_offset="America/New_York")
         data = await client.async_mac_status("0004A3905474")
 
         assert data["listOfMacs"][0]["mac"] == "0004A3111111"
@@ -744,7 +743,7 @@ async def test_async_pulse(aresponses):
     """Test getting sid pulse data."""
     aresponses.add(
         "engage.efergy.com",
-        "/mobile_proxy/getPulse?token=ur1234567-0abc12de3f456gh7ij89k012&sid=1",
+        "/mobile_proxy/getPulse?token=ur1234567-0abc12de3f456gh7ij89k012&offset=300&sid=1",
         "GET",
         aresponses.Response(
             status=200,
@@ -754,7 +753,7 @@ async def test_async_pulse(aresponses):
         match_querystring=True,
     )
     async with ClientSession() as session:
-        client = Efergy(API_KEY, session=session)
+        client = Efergy(API_KEY, session=session, utc_offset="America/New_York")
         data = await client.async_pulse(1)
 
         assert data["status"] == "ok"
@@ -766,7 +765,7 @@ async def test_async_status(aresponses):
     """Test getting device status."""
     aresponses.add(
         "engage.efergy.com",
-        "/mobile_proxy/getStatus?token=ur1234567-0abc12de3f456gh7ij89k012",
+        "/mobile_proxy/getStatus?token=ur1234567-0abc12de3f456gh7ij89k012&offset=300",
         "GET",
         aresponses.Response(
             status=200,
@@ -776,7 +775,7 @@ async def test_async_status(aresponses):
         match_querystring=True,
     )
     async with ClientSession() as session:
-        client = Efergy(API_KEY, session=session)
+        client = Efergy(API_KEY, session=session, utc_offset="America/New_York")
         await client.async_status()
 
         assert client.info["hid"] == "1234567890abcdef1234567890abcdef"
@@ -793,7 +792,7 @@ async def test_async_tariff(aresponses):
     """Test getting tariff data."""
     aresponses.add(
         "engage.efergy.com",
-        "/mobile_proxy/getTariff?token=ur1234567-0abc12de3f456gh7ij89k012",
+        "/mobile_proxy/getTariff?token=ur1234567-0abc12de3f456gh7ij89k012&offset=300",
         "GET",
         aresponses.Response(
             status=200,
@@ -803,7 +802,7 @@ async def test_async_tariff(aresponses):
         match_querystring=True,
     )
     async with ClientSession() as session:
-        client = Efergy(API_KEY, session=session)
+        client = Efergy(API_KEY, session=session, utc_offset="America/New_York")
         data = await client.async_tariff()
 
         assert data[0]["channel"] == "PWER"
@@ -842,7 +841,7 @@ async def test_async_weather(aresponses):
     """Test getting weather data."""
     aresponses.add(
         "engage.efergy.com",
-        "/mobile_proxy/getWeather?token=ur1234567-0abc12de3f456gh7ij89k012&city=Beijing&country=China&timestamp=1637884800",
+        "/mobile_proxy/getWeather?token=ur1234567-0abc12de3f456gh7ij89k012&offset=300&city=Beijing&country=China&timestamp=1637884800",
         "GET",
         aresponses.Response(
             status=200,
@@ -852,7 +851,7 @@ async def test_async_weather(aresponses):
         match_querystring=True,
     )
     async with ClientSession() as session:
-        client = Efergy(API_KEY, session=session)
+        client = Efergy(API_KEY, session=session, utc_offset="America/New_York")
         data = await client.async_weather("Beijing", "China", timestamp=1637884800)
 
         assert data["temp_F"] == "70"
@@ -863,7 +862,7 @@ async def test_async_set_budget(aresponses):
     """Test getting weather data."""
     aresponses.add(
         "engage.efergy.com",
-        "/mobile_proxy/setBudget?token=ur1234567-0abc12de3f456gh7ij89k012&budget=100",
+        "/mobile_proxy/setBudget?token=ur1234567-0abc12de3f456gh7ij89k012&offset=300&budget=100",
         "GET",
         aresponses.Response(
             status=200,
@@ -873,7 +872,7 @@ async def test_async_set_budget(aresponses):
         match_querystring=True,
     )
     async with ClientSession() as session:
-        client = Efergy(API_KEY, session=session)
+        client = Efergy(API_KEY, session=session, utc_offset="America/New_York")
         data = await client.async_set_budget(100)
 
         assert data == {"monthly_budget": 250.0, "status": "ok"}
