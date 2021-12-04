@@ -1,0 +1,30 @@
+{
+  "listOfMacs":[
+    {
+      "listofchannels":[
+        {
+          "assoc":1,
+          "cid":"cid.0004A3111111",
+          "reading":null,
+          "ts":1638646312,
+          "tsDelta":6,
+          "tsHuman":"Sat Dec 4 19:31:52 2021",
+          "type":{
+            "battery":5,
+            "falseBattery":0,
+            "id":null,
+            "name":"EFCT"
+          }
+        }
+      ],
+      "mac":"0004A3111111",
+      "personality":"E1",
+      "status":"on",
+      "ts":1638646312,
+      "tsDelta":6,
+      "tsHuman":"Sat Dec 4 19:31:52 2021",
+      "type":"EEEHub",
+      "version":"2.3.7"
+    }
+  ]
+}

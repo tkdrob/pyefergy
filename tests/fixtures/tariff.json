@@ -1,0 +1,35 @@
+[
+  {
+    "channel": "PWER",
+    "fromCanned": 0,
+    "hid": "1234567890abcdef1234567890abcdef",
+    "id": 0,
+    "sid": "591994",
+    "tariff": {
+      "billing": {
+        "cycleLength": 1,
+        "cycleUnits": "wibble",
+        "starts": "2011-01-01 00:00:00",
+        "timezoneBill": 0,
+        "timezoneReadings": 0
+      },
+      "name":"generated",
+      "plan":[
+        {
+          "id": -1,
+          "name": "Legacy Tariff",
+          "plan":[
+            {
+              "planDetail":[
+                {
+                  "rate": 30
+                }
+              ]
+            }
+          ],
+          "utility": "UNKNOWN"
+        }
+      ]
+    }
+  }
+]

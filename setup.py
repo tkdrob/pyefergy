@@ -6,13 +6,14 @@ with open("README.md", "r") as fh:
 
 setuptools.setup(
     name='pyefergy',
-    version='0.1.5',
+    version='master',
     author='Robert Hillis',
     author_email='tkdrob4390@yahoo.com',
     description='An API library for Efergy energy meters.',
     long_description=long_description,
     long_description_content_type="text/markdown",
     url='https://github.com/tkdrob/pyefergy',
+    package_data={"pyefergy": ["py.typed"]},
     packages=setuptools.find_packages(),
     install_requires=[
         'aiohttp>=3.4.4',
