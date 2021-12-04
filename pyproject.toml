@@ -11,3 +11,5 @@ load-plugins = [
 disable = [
     "duplicate-code",
 ]
+[tool.mypy]
+ignore_missing_imports = true
