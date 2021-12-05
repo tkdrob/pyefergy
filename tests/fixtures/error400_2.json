@@ -1,0 +1,7 @@
+{
+  "error": {
+    "id": 400,
+    "desc": "string",
+    "more": "Unknown error"
+  }
+}

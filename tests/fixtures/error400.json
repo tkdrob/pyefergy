@@ -1,0 +1,8 @@
+{
+  "error": {
+    "id": 400,
+    "desc": "string",
+    "more": "Bad formatting for : period (not a valid period)"
+  }
+}
+  

@@ -1,0 +1,15 @@
+{
+  "status":"ok",
+  "data": [
+    {
+      "channel_name":"unknown",
+      "channel_units":"unknown",
+      "cid":"\"none\"",
+      "data": [
+        {
+          "3155760000000":"undef"
+        }
+      ]
+    }
+  ]
+}

@@ -1,0 +1,26 @@
+{
+  "cloudcover":"75",
+  "humidity":"69",
+  "observation_time":"10:13 AM",
+  "precipMM":"0.0",
+  "pressure":"1011",
+  " temp_C":"21",
+  "temp_F":"70",
+  "visibility":"5",
+  "weatherCode":"143",
+  "weatherDesc":[
+    {
+      "value":"Mist"
+    }
+  ],
+  "weatherIconUrl":[
+    {
+      "value":"ICON URL"
+    }
+  ],
+  "winddir16Point":"SSE",
+  "winddirDegree":"160",
+  "windspeedKmph":"11",
+  "windspeedMiles":"7",
+  "location":"Beijing, China"
+}

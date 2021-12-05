@@ -1,15 +1,17 @@
 """An API library for Efergy energy meters."""
+# pylint: disable=too-many-arguments, too-many-public-methods
 from __future__ import annotations
 
+import logging
 from asyncio.exceptions import TimeoutError as timeouterr
 from datetime import datetime
-import logging
 from typing import Any
-import iso4217
 
+import iso4217
 from aiohttp import ClientSession, ClientTimeout
 from aiohttp.client_exceptions import ClientConnectorError
-from pytz import all_timezones, timezone as tz
+from pytz import all_timezones
+from pytz import timezone as tz
 
 from . import exceptions
 
@@ -34,8 +36,8 @@ TYPE = "type"
 UTC_OFFSET = "utc_offset"
 VERSION = "version"
 
-_ALTERNATE_RES = "https://www.energyhive.com/mobile_proxy/"
-_RES = "https://engage.efergy.com/mobile_proxy/"
+_ALTERNATE_RES = "https://www.energyhive.com/mobile_proxy"
+_RES = "https://engage.efergy.com/mobile_proxy"
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -59,11 +61,15 @@ class Efergy:
 
         Set alt to true to use the alternate API endpoint.
         """
-        self._session = ClientSession() if session is None else session
-        self.info = {}
+        self._session = session or ClientSession()
+        self.info: dict[str, str | list[str]] = {}
         self._utc_offset = 0
         self._cachettl = 60
         self.update_params(api_key=api_key, **kwargs)
+
+    def api_url(self, command: str) -> str:
+        """Return the generated base URL based on host configuration."""
+        return f"{self._url}/{command}?token={self._api_key}&offset={self._utc_offset}"
 
     def update_params(
         self,
@@ -75,10 +81,10 @@ class Efergy:
         kwargs can include:
         cachettl: int, alt: bool, utc_offset, and currency: ISO 4217 code.
         """
-        self._api_key = api_key if api_key else self._api_key
-        if CACHETTL in kwargs:
-            self._cachettl = kwargs[CACHETTL]
-        self._res = _ALTERNATE_RES if "alt" in kwargs else _RES
+        if api_key:
+            self._api_key = api_key
+        self._url = _ALTERNATE_RES if "alt" in kwargs else _RES
+        self._cachettl = kwargs.get(CACHETTL, self._cachettl)
         if CURRENCY in kwargs:
             for cty in list(iso4217.raw_table.values()):
                 if kwargs[CURRENCY] == cty["Ccy"]:
@@ -87,21 +93,24 @@ class Efergy:
             if CURRENCY not in self.info:
                 raise exceptions.InvalidCurrency("Provided currency is invalid")
         if UTC_OFFSET in kwargs:
-            utc_offset = str(kwargs[UTC_OFFSET])
-            if utc_offset in all_timezones:
+            if (utc_offset := kwargs[UTC_OFFSET]) in all_timezones:
                 utc_offset = int(datetime.now(tz(utc_offset)).strftime("%z"))
-                self._utc_offset = -(int(utc_offset/100*60))
+                self._utc_offset = -(int(utc_offset / 100 * 60))
             elif utc_offset.isnumeric():
                 self._utc_offset = utc_offset
             else:
                 raise exceptions.InvalidOffset("Provided offset is invalid")
 
-    async def _async_req(self, url: str) -> str | list:
+    async def _async_req(
+        self, command: str, params: dict[str, str | int | float] | None = None
+    ) -> Any:
         """Send get request."""
         _data = None
         try:
-            _response = await self._session.get(
-                url=url,
+            _response = await self._session.request(
+                method="GET",
+                url=self.api_url(command),
+                params=params,
                 timeout=ClientTimeout(TIMEOUT),
             )
             _data = await _response.json(content_type="text/html")
@@ -109,6 +118,8 @@ class Efergy:
             raise exceptions.ConnectError() from ex
         except (ValueError, KeyError) as ex:
             raise exceptions.DataError(_data) from ex
+        if _response.status == 200 and _data is None:
+            return {}
         if DESC in _data and _data[DESC] == "bad token":
             raise exceptions.InvalidAuth("Provided API token is invalid.")
         if ERROR in _data and _data[ERROR][ID] == 400:
@@ -129,9 +140,8 @@ class Efergy:
 
     async def async_get_sids(self) -> None:
         """Get current values sids."""
-        url = f"{self._res}getCurrentValuesSummary?token={self._api_key}"
         sids = []
-        for sid in await self._async_req(url):
+        for sid in await self._async_req("getCurrentValuesSummary"):
             sids.append(sid[SID])
         self.info["sids"] = sids
 
@@ -140,7 +150,7 @@ class Efergy:
         reading_type: str,
         period: str = DEFAULT_PERIOD,
         sid: str = None,
-    ) -> str | dict:
+    ) -> str | int | dict[str, int]:
         """Get reading for instant, budget, or summary.
 
         'reading_type' can be any of the following:
@@ -155,23 +165,24 @@ class Efergy:
         extra characters for easier keying by period.
         """
         type_str = None
+        params: dict = {}
         if reading_type == INSTANT:
-            _url = f"{self._res}getInstant?token={self._api_key}"
+            command = "getInstant"
             type_str = "reading"
         elif "energy" in reading_type:
-            _url = f"{self._res}getEnergy?token={self._api_key}"
-            _url = f"{_url}&offset={self._utc_offset}&period={period}"
+            command = "getEnergy"
+            params["period"] = period
             type_str = SUM
         elif COST in reading_type:
-            _url = f"{self._res}getCost?token={self._api_key}"
-            _url = f"{_url}&offset={self._utc_offset}&period={period}"
+            command = "getCost"
+            params["period"] = period
             type_str = SUM
         elif reading_type == "budget":
-            _url = f"{self._res}getBudget?token={self._api_key}"
+            command = "getBudget"
             type_str = STATUS
         elif reading_type == "current_values":
-            _url = f"{self._res}getCurrentValuesSummary?token={self._api_key}"
-        _data = await self._async_req(_url)
+            command = "getCurrentValuesSummary"
+        _data = await self._async_req(command, params=params)
         if (
             CURRENCY in self.info
             and COST in reading_type
@@ -192,181 +203,250 @@ class Efergy:
 
     async def async_hid_simple_tarrif(self, cost: str | int) -> dict:
         """Create and Apply tariff. Only requires a pence per kWh value."""
-        _url = f"{self._res}createHidSimpleTariff?token={self._api_key}&cost_per_kwh={cost}"
-        return await self._async_req(_url)
+        return await self._async_req(
+            "createHidSimpleTariff", params={"cost_per_kwh": cost}
+        )
 
     async def async_carbon(
         self,
         period: str = DEFAULT_PERIOD,
-        fromtime: str | int = None,
-        totime: str | int = None,
-    ) -> dict:
+        fromtime: int = 0,
+        totime: int = 0,
+    ) -> dict[str, str | int]:
         """Get amount of carbon generated by the energy production to meet the usage.
 
         of the household over a given period.
         By default the usage so far "this month" is returned.
         """
-        _url = f"{self._res}getCarbon?token={self._api_key}&offset={self._utc_offset}"
-        _url = f"{_url}&period={period}&fromTime={fromtime}&toTime={totime}"
-        return await self._async_req(_url)
+        params: dict = {
+            "period": period,
+            "fromTime": fromtime,
+            "toTime": totime,
+        }
+        return await self._async_req("getCarbon", params=params)
 
     async def async_channel_aggregated(
         self,
-        fromtime: str | int = None,
-        totime: str | int = None,
+        fromtime: str | int | None = None,
+        totime: str | int | None = None,
         aggperiod: str = DEFAULT_PERIOD,
         type_str: str = None,
         aggfunc: str = SUM,
         cachekey: str = None,
-    ) -> dict:
+    ) -> dict[str, str | list[dict[str, str | list[dict[str, Any]]]]]:
         """Return timeseries of aggregated devices on a given channel for an hid."""
-        _url = f"{self._res}getChannelAggregated?token={self._api_key}"
-        _url = f"{_url}&offset={self._utc_offset}&fromTime={fromtime}&toTime={totime}"
-        _url = f"{_url}&aggPeriod{aggperiod}&cacheTTL={self._cachettl}&type={type_str}"
-        _url = f"{_url}&aggFunc={aggfunc}&cacheKey={cachekey}"
-        return await self._async_req(_url)
+        params: dict = {
+            "fromTime": fromtime,
+            "toTime": totime,
+            "aggPeriod": aggperiod,
+            "cacheTTL": self._cachettl,
+            "type": type_str,
+            "aggFunc": aggfunc,
+            "cacheKey": cachekey,
+        }
+        return await self._async_req("getChannelAggregated", params=params)
 
-    async def async_comp_combined(self) -> dict:
+    async def async_comp_combined(self) -> dict[str, dict[str, dict[str, float]]]:
         """Retrieve comparison data between a given household and all other households.
 
         for day, week and month. The comparisons are also available elsewhere separately
         (getCompDay etc.)
         """
-        _url = f"{self._res}getCompCombined?token={self._api_key}"
-        _url = f"{_url}&offset={self._utc_offset}"
-        return await self._async_req(_url)
+        return await self._async_req("getCompCombined")
 
-    async def async_comp_day(self) -> dict:
+    async def async_comp_day(self) -> dict[str, dict[str, dict[str, float]]]:
         """Retrieve comparison data between a given household.
 
         and all other households over the period of a day.
         """
-        _url = f"{self._res}getCompDay?token={self._api_key}&offset={self._utc_offset}"
-        return await self._async_req(_url)
+        return await self._async_req("getCompDay")
 
-    async def async_comp_month(self) -> dict:
-        """Retrieve comparison data between a given household.
-
-        and all other households over the period of a month.
-        """
-        _url = f"{self._res}getCompMonth?token={self._api_key}"
-        _url = f"{_url}&offset={self._utc_offset}"
-        return await self._async_req(_url)
-
-    async def async_comp_week(self) -> dict:
+    async def async_comp_week(self) -> dict[str, dict[str, dict[str, float]]]:
         """Retrieve comparison data between a given household.
 
         and all other households over the period of a week.
         """
-        _url = f"{self._res}getCompWeek?token={self._api_key}&offset={self._utc_offset}"
-        return await self._async_req(_url)
+        return await self._async_req("getCompWeek")
 
-    async def async_comp_year(self) -> dict:
+    async def async_comp_month(self) -> dict[str, dict[str, dict[str, float]]]:
+        """Retrieve comparison data between a given household.
+
+        and all other households over the period of a month.
+        """
+        return await self._async_req("getCompMonth")
+
+    async def async_comp_year(self) -> dict[str, dict[str, dict[str, float]]]:
         """Retrieve comparison data between a given household.
 
         and all other households over the period of a year.
         """
-        _url = f"{self._res}getCompYear?token={self._api_key}&offset={self._utc_offset}"
-        return await self._async_req(_url)
+        return await self._async_req("getCompYear")
 
     async def async_consumption_co2_graph(
         self,
         fromtime: str | int,
         totime: str | int,
         aggperiod: str = DEFAULT_PERIOD,
-        cachekey: str = None,
+        cachekey: str | None = None,
     ) -> dict:
         """Return timeseries of consumed/cost and CO2."""
-        _url = f"{self._res}getConsumptionCostCO2Graph?token={self._api_key}"
-        _url = f"{_url}&offset={self._utc_offset}&aggPeriod={aggperiod}"
-        _url = f"{_url}&cacheTTL={self._cachettl}&cacheKey={cachekey or aggperiod}"
-        _url = f"{_url}&fromTime={fromtime}&toTime={totime}"
-        _data = await self._async_req(_url)
-        return _data
+        params: dict = {
+            "aggPeriod": aggperiod,
+            "cacheTTL": self._cachettl,
+            "cacheKey": cachekey,
+            "fromTime": fromtime,
+            "toTime": totime,
+        }
+        return await self._async_req("getConsumptionCostCO2Graph", params=params)
 
     async def async_generated_consumption_import(
         self,
         fromtime: str | int,
         totime: str | int,
         cachekey: str = None,
-    ) -> dict:
+    ) -> dict[str, float]:
         """Deliver proportion of consumed power that is generated in the home.
 
         vs that imported. Only useful if PWER and PWER_GAC channels are present.
         """
-        _url = f"{self._res}getConsumptionGeneratedAndImport?token={self._api_key}"
-        _url = f"{_url}&offset={self._utc_offset}&cacheTTL={self._cachettl}"
-        _url = f"{_url}&cacheKey={cachekey}&fromTime={fromtime}&toTime={totime}"
-        _data = await self._async_req(_url)
-        return _data
-
-    async def async_country_list(self) -> dict:
-        """Retrieve list of countries with their associated voltage."""
-        return await self._async_req(f"{self._res}getCountryList?token={self._api_key}")
-
-    async def async_day(
-        self, getpreviousperiod: int = None, cache: bool = True
-    ) -> dict:
-        """Retrieve historical timeseries of consumption data.
-
-        for household for previous 24 hours.
-        Data will be returned at a minute level of resolution.
-        """
-        _url = f"{self._res}getDay?token={self._api_key}&offset={self._utc_offset}"
-        _url = f"{_url}&getPreviousPeriod={getpreviousperiod}&cache={cache}"
-        _data = await self._async_req(_url)
+        params: dict = {
+            "cacheTTL": self._cachettl,
+            "cacheKey": cachekey,
+            "fromTime": fromtime,
+            "toTime": totime,
+        }
+        _data = await self._async_req("getConsumptionGeneratedAndImport", params=params)
         return _data[DATA]
-
-    async def async_estimated_combined(self) -> dict:
-        """Retrieve estimated usage data for a given household for the current.
-
-        day and current month.
-        The comparisons are also available elsewhere separately (see getForecast)
-        """
-        _url = f"{self._res}getEstCombined?token={self._api_key}"
-        return await self._async_req(_url)
-
-    async def async_first_data(self) -> dict:
-        """Return first data point time. (UTC)."""
-        _data = await self._async_req(f"{self._res}getFirstData?token={self._api_key}")
-        return _data
-
-    async def async_forecast(self, period: str) -> dict:
-        """Get forecast for energy consumption, greenhouse gas generation.
-
-        or cost (if tariff set).
-        """
-        _url = f"{self._res}getForecast?token={self._api_key}&offset={self._utc_offset}"
-        _url = f"{_url}&period={period}"
-        return await self._async_req(_url)
 
     async def async_generated_consumption_export(
         self,
         fromtime: str | int,
         totime: str | int,
         cachekey: str = None,
-    ) -> dict:
+    ) -> dict[str, float]:
         """Deliver proportion of generated power.
 
         that is used in the home vs that exported.
         Only useful if PWER and PWER_GAC channels are present.
         """
-        _url = f"{self._res}getGeneratedConsumptionAndExport?token={self._api_key}"
-        _url = f"{_url}&offset={self._utc_offset}&fromTime={fromtime}&toTime="
-        _url = f"{_url}{totime}&cacheTTL={self._cachettl}&cacheKey={cachekey}"
-        return await self._async_req(_url)
+        params: dict = {
+            "fromTime": fromtime,
+            "toTime": totime,
+            "cacheTTL": self._cachettl,
+            "cacheKey": cachekey,
+        }
+        _data = await self._async_req("getGeneratedConsumptionAndExport", params=params)
+        return _data[DATA]
+
+    async def async_country_list(self) -> dict[str, str]:
+        """Retrieve list of countries with their associated voltage."""
+        return await self._async_req("getCountryList")
+
+    async def async_day(
+        self, getpreviousperiod: int = 0, cache: bool = True
+    ) -> dict[str, list[float]]:
+        """Retrieve historical timeseries of consumption data.
+
+        for household for previous 24 hours.
+        Data will be returned at a minute level of resolution.
+        """
+        params: dict = {
+            "getPreviousPeriod": getpreviousperiod,
+            "cache": str(cache),
+        }
+        _data = await self._async_req("getDay", params=params)
+        return _data[DATA]
+
+    async def async_week(
+        self,
+        getpreviousperiod: int = 0,
+        cache: bool = True,
+        datatype: str = DEFAULT_TYPE,
+    ) -> dict[str, list[float]]:
+        """Retrieve the historical timeseries of consumption data.
+
+        for a household for the previous week.
+        Data will be returned at a hour level of resolution.
+        """
+        params: dict = {
+            "getPreviousPeriod": getpreviousperiod,
+            "cache": str(cache),
+            "dataType": datatype,
+        }
+        _data = await self._async_req("getWeek", params=params)
+        return _data[DATA]
+
+    async def async_month(
+        self,
+        getpreviousperiod: int = 0,
+        cache: bool = True,
+        datatype: str = DEFAULT_TYPE,
+    ) -> dict[str, list[float]]:
+        """Retrieve the historical timeseries of consumption data.
+
+        or a household for the previous month.
+        Data will be returned at a day level of resolution.
+        """
+        params: dict = {
+            "getPreviousPeriod": getpreviousperiod,
+            "cache": str(cache),
+            "dataType": datatype,
+        }
+        _data = await self._async_req("getMonth", params=params)
+        return _data[DATA]
+
+    async def async_year(
+        self,
+        cache: bool = True,
+        datatype: str = DEFAULT_TYPE,
+    ) -> dict[str, list[float]]:
+        """Retrieve the historical timeseries of consumption data.
+
+        for a household for the previous year.
+        Data will be returned at a month level of resolution.
+        """
+        params: dict = {
+            "cache": str(cache),
+            "dataType": datatype,
+        }
+        _data = await self._async_req("getYear", params=params)
+        return _data[DATA]
+
+    async def async_estimated_combined(self) -> dict[str, float | dict[str, float]]:
+        """Retrieve estimated usage data for a given household for the current.
+
+        day and current month.
+        The comparisons are also available elsewhere separately (see getForecast)
+        """
+        return await self._async_req("getEstCombined")
+
+    async def async_first_data(self) -> dict[str, str]:
+        """Return first data point time. (UTC)."""
+        return await self._async_req("getFirstData")
+
+    async def async_forecast(self, period: str) -> dict[str, dict[str, float]]:
+        """Get forecast for energy consumption, greenhouse gas generation.
+
+        or cost (if tariff set).
+        """
+        return await self._async_req("getForecast", params={"period": period})
 
     async def async_generated_energy_revenue_carbon(
         self,
         fromtime: str | int,
         totime: str | int,
+        aggperiod: str = DEFAULT_PERIOD,
         cachekey: str = None,
-    ) -> dict:
+    ) -> dict[str, str | list[dict[str, Any]]]:
         """Return a timeseries of consumed, revenue and c02 saved."""
-        _url = f"{self._res}getGeneratedEnergyRevenueCarbon?token={self._api_key}"
-        _url = f"{_url}&offset={self._utc_offset}&fromTime={fromtime}&toTime="
-        _url = f"{_url}{totime}&cacheTTL={self._cachettl}&cacheKey={cachekey}"
-        return await self._async_req(_url)
+        params: dict = {
+            "fromTime": fromtime,
+            "toTime": totime,
+            "cacheTTL": self._cachettl,
+            "cacheKey": cachekey,
+            "aggPeriod": aggperiod,
+        }
+        return await self._async_req("getGeneratedEnergyRevenueCarbon", params=params)
 
     async def async_generated_consumption_graph(
         self,
@@ -374,16 +454,19 @@ class Efergy:
         totime: str | int,
         cachekey: str = None,
         aggperiod: str = DEFAULT_PERIOD,
-    ) -> dict:
+    ) -> dict[str, str | list[dict[str, Any]]]:
         """Deliver timeseries array of consumed/generated/genconsumed/exported/imported.
 
         Only useful if PWER and PWER_GAC channels are present.
         """
-        _url = f"{self._res}getGenerationConsumptionGraph?token={self._api_key}"
-        _url = f"{_url}&offset={self._utc_offset}&fromTime={fromtime}&toTime="
-        _url = f"{_url}{totime}&cacheTTL={self._cachettl}&cacheKey={cachekey}"
-        _url = f"{_url}&aggPeriod={aggperiod}"
-        return await self._async_req(_url)
+        params: dict = {
+            "fromTime": fromtime,
+            "toTime": totime,
+            "cacheTTL": self._cachettl,
+            "cacheKey": cachekey,
+            "aggPeriod": aggperiod,
+        }
+        return await self._async_req("getGenerationConsumptionGraph", params=params)
 
     async def async_generated_consumption_graph_costrev(
         self,
@@ -391,72 +474,62 @@ class Efergy:
         totime: str | int,
         cachekey: str = None,
         aggperiod: str = DEFAULT_PERIOD,
-    ) -> dict:
+    ) -> dict[str, str | list[dict[str, Any]]]:
         """Deliver timeseries array of consumed/generated/genconsumed/exported/imported.
 
         costs/revenue.
         Only useful if PWER and PWER_GAC channels are present.
         """
-        _url = f"{self._res}getGenerationConsumptionGraphCostRevenue?token="
-        _url = f"{_url}{self._api_key}&aggPeriod={aggperiod}"
-        _url = f"{_url}&offset={self._utc_offset}&fromTime={fromtime}&toTime="
-        _url = f"{_url}{totime}&cacheTTL={self._cachettl}&cacheKey={cachekey}"
-        return await self._async_req(_url)
+        params: dict = {
+            "aggPeriod": aggperiod,
+            "fromTime": fromtime,
+            "toTime": totime,
+            "cacheTTL": self._cachettl,
+            "cacheKey": cachekey,
+        }
+        return await self._async_req(
+            "getGenerationConsumptionGraphCostRevenue", params=params
+        )
 
     async def async_historical_values(
         self, period: str = DEFAULT_PERIOD, type_str: str = "PWER"
-    ) -> dict:
+    ) -> dict[str, str | list[dict[str, str | list[dict[str, str]]]]]:
         """Return array of historical values."""
-        _url = f"{self._res}getHV?token={self._api_key}&period={period}&type{type_str}"
-        return await self._async_req(_url)
+        return await self._async_req(
+            "getHV", params={"period": period, "type": type_str}
+        )
 
-    async def async_household(self) -> dict:
+    async def async_household(self) -> dict[str, str]:
         """Get household attributes as set in setHousehold.php."""
-        return await self._async_req(f"{self._res}getHousehold?token={self._api_key}")
+        return await self._async_req("getHousehold")
 
-    async def async_household_data_reference(self) -> dict:
-        """Return a set of allowed values for setting the household attributes."""
-        _url = f"{self._res}getHouseholdDataReference?token={self._api_key}"
-        return await self._async_req(_url)
-
-    async def async_mac(self) -> dict:
-        """Set the list of MACs as a listOfMACs for a valid householder ID (HID)."""
-        return await self._async_req(f"{self._res}getMAC?token={self._api_key}")
-
-    async def async_mac_status(self, mac: str) -> dict:
-        """Retrieve the device status for a given MAC."""
-        _url = f"{self._res}getMACStatus?token={self._api_key}&mac_address={mac}"
-        return await self._async_req(_url)
-
-    async def async_month(
+    async def async_household_data_reference(
         self,
-        getpreviousperiod: int = None,
-        cache: bool = True,
-        datatype: str = DEFAULT_TYPE,
-    ) -> dict:
-        """Retrieve the historical timeseries of consumption data.
+    ) -> dict[str, dict[str, dict[str, str | list]]]:
+        """Return a set of allowed values for setting the household attributes."""
+        return await self._async_req("getHouseholdDataReference")
 
-        or a household for the previous month.
-        Data will be returned at a day level of resolution.
-        """
-        _url = f"{self._res}getMonth?token={self._api_key}&offset={self._utc_offset}"
-        _url = f"{_url}&getPreviousPeriod={getpreviousperiod}&cache={cache}"
-        _url = f"{_url}&dataType={datatype}"
-        _data = await self._async_req(_url)
-        return _data[DATA]
+    async def async_mac(self) -> dict[str, list[dict[str, str | int | list]]]:
+        """Set the list of MACs as a listOfMACs for a valid householder ID (HID)."""
+        return await self._async_req("getMAC")
 
-    async def async_pulse(self, sid: str | int) -> dict:
+    async def async_mac_status(
+        self, mac: str
+    ) -> dict[str, list[dict[str, str | int | list]]]:
+        """Retrieve the device status for a given MAC."""
+        return await self._async_req("getMACStatus", params={"mac_address": mac})
+
+    async def async_pulse(self, sid: str | int) -> dict[str, str | int]:
         """Get the pulse rate for a given IR clamp."""
-        _url = f"{self._res}getPulse?token={self._api_key}&sid={sid}"
-        return await self._async_req(_url)
+        return await self._async_req("getPulse", params={"sid": sid})
 
-    async def async_status(self, get_sids: bool = False) -> dict:
+    async def async_status(self, get_sids: bool = False) -> dict[str, str | list[dict]]:
         """Retrieve the device status as a list of statuses."""
-        _data = await self._async_req(f"{self._res}getStatus?token={self._api_key}")
+        _data = await self._async_req("getStatus")
         self.info[HID] = _data[HID]
         self.info[MAC] = _data[LISTOFMACS][0][MAC]
         self.info[STATUS] = _data[LISTOFMACS][0][STATUS]
-        self.info[TYPE] = None
+        self.info[TYPE] = ""
         if TYPE in _data[LISTOFMACS][0]:
             self.info[TYPE] = _data[LISTOFMACS][0][TYPE]
         self.info[VERSION] = _data[LISTOFMACS][0][VERSION]
@@ -464,13 +537,12 @@ class Efergy:
             await self.async_get_sids()
         return _data
 
-    async def async_tarrif(self) -> dict:
+    async def async_tariff(self) -> list[dict[str, str | int | dict]]:
         """Return the tariff structure(s) for the HID supplied.
 
         (limited by optional sid).
         """
-        _data = await self._async_req(f"{self._res}getTariff?token={self._api_key}")
-        return _data[DATA]
+        return await self._async_req("getTariff")
 
     async def async_time_series(
         self,
@@ -480,62 +552,34 @@ class Efergy:
         aggfunc: str = SUM,
         cache: bool = True,
         datatype: str = DEFAULT_TYPE,
-    ) -> dict:
+    ) -> dict[str, str | dict[str, list[str]]]:
         """Retrieve the historical timeseries of consumption data.
 
         for a household over the specified period.
         `fromtime` and `totime` are expressed in epoch timestamp
         data_type: cost or kwh
         """
-        _url = f"{self._res}getTimeSeries?token={self._api_key}&offset="
-        _url = f"{_url}{self._utc_offset}&fromTime={fromtime}&toTime={totime}"
-        _url = f"{_url}&appPeriod={aggperiod}&aggFunc={aggfunc}&cache="
-        _url = f"{_url}{cache}&dataType={datatype}"
-        _data = await self._async_req(_url)
-        return _data[DATA]
+        params: dict = {
+            "fromTime": fromtime,
+            "toTime": totime,
+            "aggPeriod": aggperiod,
+            "aggFunc": aggfunc,
+            "cache": str(cache),
+            "dataType": datatype,
+        }
+        return await self._async_req("getTimeSeries", params=params)
 
     async def async_weather(
         self, city: str, country: str, timestamp: str = None
-    ) -> dict:
+    ) -> list[Any] | dict[str, str]:
         """Get the current weather for the location of the HID."""
-        _url = f"{self._res}getWeather?token={self._api_key}&city={city}&country="
-        _url = f"{_url}{country}&timestamp={timestamp}"
-        return await self._async_req(_url)
+        params: dict = {
+            "city": city,
+            "country": country,
+            "timestamp": timestamp,
+        }
+        return await self._async_req("getWeather", params=params)
 
-    async def async_week(
-        self,
-        getpreviousperiod: int = None,
-        cache: bool = True,
-        datatype: str = DEFAULT_TYPE,
-    ) -> dict:
-        """Retrieve the historical timeseries of consumption data.
-
-        for a household for the previous week.
-        Data will be returned at a hour level of resolution.
-        """
-        _url = f"{self._res}getWeek?token={self._api_key}&offset={self._utc_offset}"
-        _url = f"{_url}&getPreviousPeriod={getpreviousperiod}&cache={cache}"
-        _url = f"{_url}&dataType={datatype}"
-        _data = await self._async_req(_url)
-        return _data[DATA]
-
-    async def async_year(
-        self,
-        cache: bool = True,
-        datatype: str = DEFAULT_TYPE,
-    ) -> dict:
-        """Retrieve the historical timeseries of consumption data.
-
-        for a household for the previous year.
-        Data will be returned at a month level of resolution.
-        """
-        _url = f"{self._res}getYear?token={self._api_key}&offset={self._utc_offset}"
-        _url = f"{_url}&cache={cache}&dataType={datatype}"
-        _data = await self._async_req(_url)
-        return _data[DATA]
-
-    async def async_set_budget(self, budget: float) -> str:
+    async def async_set_budget(self, budget: float) -> dict[str, str | float]:
         """Set a value for the monthly budget for a HID."""
-        _url = f"{self._res}setBudget?token={self._api_key}&budget={budget}"
-        _data = await self._async_req(_url)
-        return _data[STATUS]
+        return await self._async_req("setBudget", params={"budget": budget})

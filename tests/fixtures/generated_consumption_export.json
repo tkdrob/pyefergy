@@ -1,0 +1,9 @@
+{
+  "status":"ok",
+  "data":{
+    "consumedInHome":0,
+    "diverted":0,
+    "exported":0,
+    "generated":0
+  }
+}

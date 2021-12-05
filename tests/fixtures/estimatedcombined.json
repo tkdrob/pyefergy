@@ -1,0 +1,22 @@
+{
+  "day_kwh":{
+    "estimate":11.73
+  },
+  "day_tariff":{
+    "estimate":3.52
+  },
+  "day_co2":{
+    "estimate":11.73
+  },
+  "month_kwh":{
+    "previousSum":45.87
+  },
+  "month_tariff":{
+    "estimate":107.54,
+    "previousSum":13.76
+  },
+  "month_co2":{
+    "previousSum":45.87
+  },
+  "month_budget":500
+}

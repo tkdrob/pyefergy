@@ -1,0 +1,15 @@
+[tool.pylint.MASTER]
+py-version = "3.10"
+load-plugins = [
+    "pylint.extensions.code_style",
+    "pylint.extensions.typing",
+]
+
+[tool.pylint."MESSAGES CONTROL"]
+# Reasons disabled:
+# duplicate-code - unavoidable
+disable = [
+    "duplicate-code",
+]
+[tool.mypy]
+ignore_missing_imports = true
