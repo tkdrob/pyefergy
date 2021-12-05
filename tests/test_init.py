@@ -1,4 +1,6 @@
 """Tests for PyEfergy object models."""
+import asyncio
+
 import pytest
 from aiohttp.client import ClientSession
 
@@ -48,8 +50,8 @@ async def test_init(aresponses):
 
 
 @pytest.mark.asyncio
-async def test_errors(aresponses):
-    """Test errors."""
+async def test_error_400(aresponses):
+    """Test error 400."""
     aresponses.add(
         "engage.efergy.com",
         "/mobile_proxy/getCurrentValuesSummary?token=ur1234567-0abc12de3f456gh7ij89k012&offset=300",
@@ -68,6 +70,10 @@ async def test_errors(aresponses):
         except pyefergy.exceptions.InvalidPeriod:
             pass
 
+
+@pytest.mark.asyncio
+async def test_error_400_2(aresponses):
+    """Test error 400."""
     aresponses.add(
         "engage.efergy.com",
         "/mobile_proxy/getCurrentValuesSummary?token=ur1234567-0abc12de3f456gh7ij89k012&offset=300",
@@ -86,6 +92,10 @@ async def test_errors(aresponses):
         except pyefergy.exceptions.DataError:
             pass
 
+
+@pytest.mark.asyncio
+async def test_error_404(aresponses):
+    """Test error 404."""
     aresponses.add(
         "engage.efergy.com",
         "/mobile_proxy/getCurrentValuesSummary?token=ur1234567-0abc12de3f456gh7ij89k012&offset=300",
@@ -104,6 +114,10 @@ async def test_errors(aresponses):
         except pyefergy.exceptions.APICallLimit:
             pass
 
+
+@pytest.mark.asyncio
+async def test_error_500(aresponses):
+    """Test error 500."""
     aresponses.add(
         "engage.efergy.com",
         "/mobile_proxy/getCurrentValuesSummary?token=ur1234567-0abc12de3f456gh7ij89k012&offset=300",
@@ -122,6 +136,10 @@ async def test_errors(aresponses):
         except pyefergy.exceptions.ServiceError:
             pass
 
+
+@pytest.mark.asyncio
+async def test_error_403(aresponses):
+    """Test error 403."""
     aresponses.add(
         "engage.efergy.com",
         "/mobile_proxy/getCurrentValuesSummary?token=ur1234567-0abc12de3f456gh7ij89k012&offset=300",
@@ -140,17 +158,26 @@ async def test_errors(aresponses):
         except pyefergy.exceptions.InvalidAuth:
             pass
 
+
+@pytest.mark.asyncio
+async def test_timeout(aresponses):
+    """Test timeout."""
+
+    async def response_handler():
+        await asyncio.sleep(0)
+        return aresponses.Response(body="Timeout!")
+
     aresponses.add(
         "engage.efergy.com",
-        "/mobile_proxy/getCurrentValuesSummary?token=ur1234567-0abc12de3f456gh7ij89k012&offset=300",
+        "/mobile_proxy/getCurrentValuesSummary?token=ur1234567-0abc12de3f456gh7ij89k012&offset=0",
         "GET",
-        aresponses.Response(
-            status=403,
-            headers={"Content-Type": "text/html"},
-            text="Not Found!",
-        ),
-        match_querystring=True,
+        await response_handler(),
     )
+
+    client = Efergy(API_KEY, session=ClientSession())
+
+    with pytest.raises(pyefergy.exceptions.ConnectError):
+        await client.async_get_reading("current_values")
 
 
 @pytest.mark.asyncio

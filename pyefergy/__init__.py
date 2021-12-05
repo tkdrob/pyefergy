@@ -9,7 +9,7 @@ from typing import Any
 
 import iso4217
 from aiohttp import ClientSession, ClientTimeout
-from aiohttp.client_exceptions import ClientConnectorError
+from aiohttp.client_exceptions import ClientConnectorError, ServerDisconnectedError
 from pytz import all_timezones
 from pytz import timezone as tz
 
@@ -114,10 +114,8 @@ class Efergy:
                 timeout=ClientTimeout(TIMEOUT),
             )
             _data = await _response.json(content_type="text/html")
-        except (timeouterr, ClientConnectorError) as ex:
+        except (timeouterr, ClientConnectorError, ServerDisconnectedError) as ex:
             raise exceptions.ConnectError() from ex
-        except (ValueError, KeyError) as ex:
-            raise exceptions.DataError(_data) from ex
         if _response.status == 200 and _data is None:
             return {}
         if DESC in _data and _data[DESC] == "bad token":
