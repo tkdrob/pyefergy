@@ -2,18 +2,155 @@
 import pytest
 from aiohttp.client import ClientSession
 
+import pyefergy
 from pyefergy import Efergy
 
-from . import load_fixture, API_KEY
+from . import API_KEY, load_fixture
 
 
 @pytest.mark.asyncio
-async def test_init():
+async def test_init(aresponses):
     """Test init."""
+    aresponses.add(
+        "engage.efergy.com",
+        "/mobile_proxy/getCurrentValuesSummary?token=ur1234567-0abc12de3f456gh7ij89k012&offset=120",
+        "GET",
+        aresponses.Response(
+            status=408,
+            headers={"Content-Type": "text/html"},
+            text=load_fixture("current_values.json"),
+        ),
+        match_querystring=True,
+    )
+    async with ClientSession() as session:
+        client = Efergy(API_KEY, session=session, utc_offset="120")
+        await client.async_get_sids()
+
+        assert client._utc_offset == "120"
+
+    try:
+        client = Efergy(API_KEY, utc_offset="abc")
+    except pyefergy.exceptions.InvalidOffset:
+        pass
+
     client = Efergy(API_KEY, utc_offset="America/New_York", currency="USD")
 
     assert client._utc_offset == 300
     assert client.info["currency"] == "USD"
+
+    try:
+        client = Efergy(API_KEY, utc_offset="America/New_York", currency="US")
+    except pyefergy.exceptions.InvalidCurrency:
+        pass
+
+    assert client._utc_offset == 300
+    assert client.info["currency"] == "USD"
+
+
+@pytest.mark.asyncio
+async def test_errors(aresponses):
+    """Test errors."""
+    aresponses.add(
+        "engage.efergy.com",
+        "/mobile_proxy/getCurrentValuesSummary?token=ur1234567-0abc12de3f456gh7ij89k012&offset=300",
+        "GET",
+        aresponses.Response(
+            status=200,
+            headers={"Content-Type": "text/html"},
+            text=load_fixture("error400.json"),
+        ),
+        match_querystring=True,
+    )
+    async with ClientSession() as session:
+        client = Efergy(API_KEY, session=session, utc_offset="America/New_York")
+        try:
+            await client.async_get_sids()
+        except pyefergy.exceptions.InvalidPeriod:
+            pass
+
+    aresponses.add(
+        "engage.efergy.com",
+        "/mobile_proxy/getCurrentValuesSummary?token=ur1234567-0abc12de3f456gh7ij89k012&offset=300",
+        "GET",
+        aresponses.Response(
+            status=200,
+            headers={"Content-Type": "text/html"},
+            text=load_fixture("error400_2.json"),
+        ),
+        match_querystring=True,
+    )
+    async with ClientSession() as session:
+        client = Efergy(API_KEY, session=session, utc_offset="America/New_York")
+        try:
+            await client.async_get_sids()
+        except pyefergy.exceptions.DataError:
+            pass
+
+    aresponses.add(
+        "engage.efergy.com",
+        "/mobile_proxy/getCurrentValuesSummary?token=ur1234567-0abc12de3f456gh7ij89k012&offset=300",
+        "GET",
+        aresponses.Response(
+            status=200,
+            headers={"Content-Type": "text/html"},
+            text=load_fixture("error404.json"),
+        ),
+        match_querystring=True,
+    )
+    async with ClientSession() as session:
+        client = Efergy(API_KEY, session=session, utc_offset="America/New_York")
+        try:
+            await client.async_get_sids()
+        except pyefergy.exceptions.APICallLimit:
+            pass
+
+    aresponses.add(
+        "engage.efergy.com",
+        "/mobile_proxy/getCurrentValuesSummary?token=ur1234567-0abc12de3f456gh7ij89k012&offset=300",
+        "GET",
+        aresponses.Response(
+            status=200,
+            headers={"Content-Type": "text/html"},
+            text=load_fixture("error500.json"),
+        ),
+        match_querystring=True,
+    )
+    async with ClientSession() as session:
+        client = Efergy(API_KEY, session=session, utc_offset="America/New_York")
+        try:
+            await client.async_get_sids()
+        except pyefergy.exceptions.ServiceError:
+            pass
+
+    aresponses.add(
+        "engage.efergy.com",
+        "/mobile_proxy/getCurrentValuesSummary?token=ur1234567-0abc12de3f456gh7ij89k012&offset=300",
+        "GET",
+        aresponses.Response(
+            status=200,
+            headers={"Content-Type": "text/html"},
+            text=load_fixture("error403.json"),
+        ),
+        match_querystring=True,
+    )
+    async with ClientSession() as session:
+        client = Efergy(API_KEY, session=session, utc_offset="America/New_York")
+        try:
+            await client.async_get_sids()
+        except pyefergy.exceptions.InvalidAuth:
+            pass
+
+    aresponses.add(
+        "engage.efergy.com",
+        "/mobile_proxy/getCurrentValuesSummary?token=ur1234567-0abc12de3f456gh7ij89k012&offset=300",
+        "GET",
+        aresponses.Response(
+            status=403,
+            headers={"Content-Type": "text/html"},
+            text="Not Found!",
+        ),
+        match_querystring=True,
+    )
 
 
 @pytest.mark.asyncio
@@ -94,7 +231,9 @@ async def test_async_get_cost(aresponses):
         match_querystring=True,
     )
     async with ClientSession() as session:
-        client = Efergy(API_KEY, session=session, utc_offset="America/New_York")
+        client = Efergy(
+            API_KEY, session=session, utc_offset="America/New_York", currency="USD"
+        )
         data = await client.async_get_reading("cost", period="day")
 
         assert data == "5.27"
@@ -142,6 +281,24 @@ async def test_async_get_current_values(aresponses):
         assert data["0"] == 1808
         assert data["728386"] == 218
         assert data["728387"] == 312
+
+    aresponses.add(
+        "engage.efergy.com",
+        "/mobile_proxy/getCurrentValuesSummary?token=ur1234567-0abc12de3f456gh7ij89k012&offset=300",
+        "GET",
+        aresponses.Response(
+            status=200,
+            headers={"Content-Type": "text/html"},
+            text=load_fixture("current_values.json"),
+        ),
+        match_querystring=True,
+    )
+
+    async with ClientSession() as session:
+        client = Efergy(API_KEY, session=session, utc_offset="America/New_York")
+        data = await client.async_get_reading("current_values", sid="0")
+
+        assert data == 1808
 
 
 @pytest.mark.asyncio
@@ -774,9 +931,20 @@ async def test_async_status(aresponses):
         ),
         match_querystring=True,
     )
+    aresponses.add(
+        "engage.efergy.com",
+        "/mobile_proxy/getCurrentValuesSummary?token=ur1234567-0abc12de3f456gh7ij89k012&offset=300",
+        "GET",
+        aresponses.Response(
+            status=200,
+            headers={"Content-Type": "text/html"},
+            text=load_fixture("current_values.json"),
+        ),
+        match_querystring=True,
+    )
     async with ClientSession() as session:
         client = Efergy(API_KEY, session=session, utc_offset="America/New_York")
-        await client.async_status()
+        await client.async_status(get_sids=True)
 
         assert client.info["hid"] == "1234567890abcdef1234567890abcdef"
         assert client.info["mac"] == "ffffffffffff"

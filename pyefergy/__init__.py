@@ -84,8 +84,7 @@ class Efergy:
         if api_key:
             self._api_key = api_key
         self._url = _ALTERNATE_RES if "alt" in kwargs else _RES
-        if CACHETTL in kwargs:
-            self._cachettl = kwargs[CACHETTL]
+        self._cachettl = kwargs.get(CACHETTL, self._cachettl)
         if CURRENCY in kwargs:
             for cty in list(iso4217.raw_table.values()):
                 if kwargs[CURRENCY] == cty["Ccy"]:
