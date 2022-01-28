@@ -1,4 +1,5 @@
 """Tests for PyEfergy object models."""
+# pylint:disable=protected-access, too-many-lines, line-too-long
 import asyncio
 import json
 

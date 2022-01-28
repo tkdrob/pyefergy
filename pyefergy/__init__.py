@@ -44,7 +44,7 @@ _LOGGER = logging.getLogger(__name__)
 TIMEOUT = 10
 
 
-class Efergy:
+class Efergy:  # pylint:disable=too-many-instance-attributes
     """Implementation of Efergy object."""
 
     _close_session = False
