@@ -32,10 +32,10 @@ jobs:
         run:  isort .
 
       - name: 🧹 Lint files with pylint
-        run:  pylint pyefergy
+        run:  pylint pyefergy tests
 
       - name: 🧹 Lint files with flake8
-        run:  flake8 pyefergy
+        run:  flake8 pyefergy tests
 
       - name: 🔍 Inspect with mypy
         run: mypy pyefergy
