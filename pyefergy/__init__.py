@@ -120,6 +120,8 @@ class Efergy:
             return {}
         if DESC in _data and _data[DESC] == "bad token":
             raise exceptions.InvalidAuth("Provided API token is invalid.")
+        if "desc" in _data and _data["desc"] == "Method call failed":
+            raise exceptions.ServiceError("Error communicating with sensor/hub. Check connections")
         if ERROR in _data and _data[ERROR][ID] == 400:
             if "period" in _data[ERROR][MORE]:
                 raise exceptions.InvalidPeriod(

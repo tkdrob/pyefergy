@@ -1,5 +1,6 @@
 """Tests for PyEfergy object models."""
 import asyncio
+import json
 
 import pytest
 from aiohttp.client import ClientSession
@@ -178,6 +179,27 @@ async def test_timeout(aresponses):
 
     with pytest.raises(pyefergy.exceptions.ConnectError):
         await client.async_get_reading("current_values")
+
+
+@pytest.mark.asyncio
+async def test_method_call_failed(aresponses):
+    """Test method call failed."""
+    aresponses.add(
+        "engage.efergy.com",
+        "/mobile_proxy/getInstant?token=ur1234567-0abc12de3f456gh7ij89k012&offset=300",
+        "GET",
+        aresponses.Response(
+            status=200,
+            headers={"Content-Type": "text/html"},
+            text=json.dumps({"status":"error","desc":"Method call failed"}),
+        ),
+        match_querystring=True,
+    )
+    async with ClientSession() as session:
+        client = Efergy(API_KEY, session=session, utc_offset="America/New_York")
+
+        with pytest.raises(pyefergy.exceptions.ServiceError):
+            await client.async_get_reading("instant_readings")
 
 
 @pytest.mark.asyncio
