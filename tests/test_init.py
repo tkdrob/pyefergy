@@ -191,7 +191,7 @@ async def test_method_call_failed(aresponses):
         aresponses.Response(
             status=200,
             headers={"Content-Type": "text/html"},
-            text=json.dumps({"status":"error","desc":"Method call failed"}),
+            text=json.dumps({"status": "error", "desc": "Method call failed"}),
         ),
         match_querystring=True,
     )
