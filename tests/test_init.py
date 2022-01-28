@@ -1,9 +1,10 @@
 """Tests for PyEfergy object models."""
+# pylint:disable=protected-access, too-many-lines, line-too-long
 import asyncio
 import json
 
-import pytest
 from aiohttp.client import ClientSession
+import pytest
 
 import pyefergy
 from pyefergy import Efergy
@@ -12,7 +13,14 @@ from . import API_KEY, load_fixture
 
 
 @pytest.mark.asyncio
-async def test_init(aresponses):
+async def test_loop() -> None:
+    """Test loop usage is handled correctly."""
+    async with Efergy(API_KEY, utc_offset="America/New_York", currency="USD") as client:
+        assert isinstance(client, Efergy)
+
+
+@pytest.mark.asyncio
+async def test_init(aresponses, client: Efergy) -> None:
     """Test init."""
     aresponses.add(
         "engage.efergy.com",
@@ -25,55 +33,43 @@ async def test_init(aresponses):
         ),
         match_querystring=True,
     )
+    assert client._utc_offset == 300
+    assert client.info["currency"] == "USD"
+
     async with ClientSession() as session:
-        client = Efergy(API_KEY, session=session, utc_offset="120")
-        await client.async_get_sids()
+        _client = Efergy(API_KEY, session=session, utc_offset="120")
+        await _client.async_get_sids()
 
-        assert client._utc_offset == "120"
+    assert _client._utc_offset == "120"
 
-    try:
-        client = Efergy(API_KEY, utc_offset="abc")
-    except pyefergy.exceptions.InvalidOffset:
-        pass
+    with pytest.raises(pyefergy.exceptions.InvalidOffset):
+        Efergy(API_KEY, utc_offset="abc")
 
-    client = Efergy(API_KEY, utc_offset="America/New_York", currency="USD")
-
-    assert client._utc_offset == 300
-    assert client.info["currency"] == "USD"
-
-    try:
-        client = Efergy(API_KEY, utc_offset="America/New_York", currency="US")
-    except pyefergy.exceptions.InvalidCurrency:
-        pass
-
-    assert client._utc_offset == 300
-    assert client.info["currency"] == "USD"
+    with pytest.raises(pyefergy.exceptions.InvalidCurrency):
+        Efergy(API_KEY, utc_offset="America/New_York", currency="US")
 
 
 @pytest.mark.asyncio
-async def test_error_400(aresponses):
+async def test_error_400(aresponses, client: Efergy) -> None:
     """Test error 400."""
     aresponses.add(
         "engage.efergy.com",
         "/mobile_proxy/getCurrentValuesSummary?token=ur1234567-0abc12de3f456gh7ij89k012&offset=300",
         "GET",
         aresponses.Response(
-            status=200,
+            status=400,
             headers={"Content-Type": "text/html"},
             text=load_fixture("error400.json"),
         ),
         match_querystring=True,
     )
-    async with ClientSession() as session:
-        client = Efergy(API_KEY, session=session, utc_offset="America/New_York")
-        try:
-            await client.async_get_sids()
-        except pyefergy.exceptions.InvalidPeriod:
-            pass
+
+    with pytest.raises(pyefergy.exceptions.InvalidPeriod):
+        await client.async_get_sids()
 
 
 @pytest.mark.asyncio
-async def test_error_400_2(aresponses):
+async def test_error_400_2(aresponses, client: Efergy) -> None:
     """Test error 400."""
     aresponses.add(
         "engage.efergy.com",
@@ -86,16 +82,13 @@ async def test_error_400_2(aresponses):
         ),
         match_querystring=True,
     )
-    async with ClientSession() as session:
-        client = Efergy(API_KEY, session=session, utc_offset="America/New_York")
-        try:
-            await client.async_get_sids()
-        except pyefergy.exceptions.DataError:
-            pass
+
+    with pytest.raises(pyefergy.exceptions.DataError):
+        await client.async_get_sids()
 
 
 @pytest.mark.asyncio
-async def test_error_404(aresponses):
+async def test_error_404(aresponses, client: Efergy) -> None:
     """Test error 404."""
     aresponses.add(
         "engage.efergy.com",
@@ -108,16 +101,13 @@ async def test_error_404(aresponses):
         ),
         match_querystring=True,
     )
-    async with ClientSession() as session:
-        client = Efergy(API_KEY, session=session, utc_offset="America/New_York")
-        try:
-            await client.async_get_sids()
-        except pyefergy.exceptions.APICallLimit:
-            pass
+
+    with pytest.raises(pyefergy.exceptions.APICallLimit):
+        await client.async_get_sids()
 
 
 @pytest.mark.asyncio
-async def test_error_500(aresponses):
+async def test_error_500(aresponses, client: Efergy) -> None:
     """Test error 500."""
     aresponses.add(
         "engage.efergy.com",
@@ -130,16 +120,13 @@ async def test_error_500(aresponses):
         ),
         match_querystring=True,
     )
-    async with ClientSession() as session:
-        client = Efergy(API_KEY, session=session, utc_offset="America/New_York")
-        try:
-            await client.async_get_sids()
-        except pyefergy.exceptions.ServiceError:
-            pass
+
+    with pytest.raises(pyefergy.exceptions.ServiceError):
+        await client.async_get_sids()
 
 
 @pytest.mark.asyncio
-async def test_error_403(aresponses):
+async def test_error_403(aresponses, client: Efergy) -> None:
     """Test error 403."""
     aresponses.add(
         "engage.efergy.com",
@@ -152,16 +139,13 @@ async def test_error_403(aresponses):
         ),
         match_querystring=True,
     )
-    async with ClientSession() as session:
-        client = Efergy(API_KEY, session=session, utc_offset="America/New_York")
-        try:
-            await client.async_get_sids()
-        except pyefergy.exceptions.InvalidAuth:
-            pass
+
+    with pytest.raises(pyefergy.exceptions.InvalidAuth):
+        await client.async_get_sids()
 
 
 @pytest.mark.asyncio
-async def test_timeout(aresponses):
+async def test_timeout(aresponses, client: Efergy) -> None:
     """Test timeout."""
 
     async def response_handler():
@@ -175,14 +159,12 @@ async def test_timeout(aresponses):
         await response_handler(),
     )
 
-    client = Efergy(API_KEY, session=ClientSession())
-
     with pytest.raises(pyefergy.exceptions.ConnectError):
         await client.async_get_reading("current_values")
 
 
 @pytest.mark.asyncio
-async def test_method_call_failed(aresponses):
+async def test_method_call_failed(aresponses, client: Efergy) -> None:
     """Test method call failed."""
     aresponses.add(
         "engage.efergy.com",
@@ -195,15 +177,13 @@ async def test_method_call_failed(aresponses):
         ),
         match_querystring=True,
     )
-    async with ClientSession() as session:
-        client = Efergy(API_KEY, session=session, utc_offset="America/New_York")
 
-        with pytest.raises(pyefergy.exceptions.ServiceError):
-            await client.async_get_reading("instant_readings")
+    with pytest.raises(pyefergy.exceptions.ServiceError):
+        await client.async_get_reading("instant_readings")
 
 
 @pytest.mark.asyncio
-async def test_async_get_sids(aresponses):
+async def test_async_get_sids(aresponses, client: Efergy) -> None:
     """Test getting sids."""
     aresponses.add(
         "engage.efergy.com",
@@ -216,15 +196,14 @@ async def test_async_get_sids(aresponses):
         ),
         match_querystring=True,
     )
-    async with ClientSession() as session:
-        client = Efergy(API_KEY, session=session, utc_offset="America/New_York")
-        await client.async_get_sids()
 
-        assert client.info == {"sids": ["728386", "0", "728387"]}
+    await client.async_get_sids()
+
+    assert client.info == {"currency": "USD", "sids": ["728386", "0", "728387"]}
 
 
 @pytest.mark.asyncio
-async def test_async_get_instant(aresponses):
+async def test_async_get_instant(aresponses, client: Efergy) -> None:
     """Test getting instant reading."""
     aresponses.add(
         "engage.efergy.com",
@@ -237,15 +216,13 @@ async def test_async_get_instant(aresponses):
         ),
         match_querystring=True,
     )
-    async with ClientSession() as session:
-        client = Efergy(API_KEY, session=session, utc_offset="America/New_York")
-        data = await client.async_get_reading("instant_readings")
+    data = await client.async_get_reading("instant_readings")
 
-        assert data == 1580
+    assert data == 1580
 
 
 @pytest.mark.asyncio
-async def test_async_get_energy(aresponses):
+async def test_async_get_energy(aresponses, client: Efergy) -> None:
     """Test getting energy reading."""
     aresponses.add(
         "engage.efergy.com",
@@ -258,15 +235,14 @@ async def test_async_get_energy(aresponses):
         ),
         match_querystring=True,
     )
-    async with ClientSession() as session:
-        client = Efergy(API_KEY, session=session, utc_offset="America/New_York")
-        data = await client.async_get_reading("energy", period="day")
 
-        assert data == "38.21"
+    data = await client.async_get_reading("energy", period="day")
+
+    assert data == "38.21"
 
 
 @pytest.mark.asyncio
-async def test_async_get_cost(aresponses):
+async def test_async_get_cost(aresponses, client: Efergy) -> None:
     """Test getting cost reading."""
     aresponses.add(
         "engage.efergy.com",
@@ -279,17 +255,12 @@ async def test_async_get_cost(aresponses):
         ),
         match_querystring=True,
     )
-    async with ClientSession() as session:
-        client = Efergy(
-            API_KEY, session=session, utc_offset="America/New_York", currency="USD"
-        )
-        data = await client.async_get_reading("cost", period="day")
 
-        assert data == "5.27"
+    assert await client.async_get_reading("cost", period="day") == "5.27"
 
 
 @pytest.mark.asyncio
-async def test_async_get_budget(aresponses):
+async def test_async_get_budget(aresponses, client: Efergy) -> None:
     """Test getting budget."""
     aresponses.add(
         "engage.efergy.com",
@@ -302,15 +273,11 @@ async def test_async_get_budget(aresponses):
         ),
         match_querystring=True,
     )
-    async with ClientSession() as session:
-        client = Efergy(API_KEY, session=session, utc_offset="America/New_York")
-        data = await client.async_get_reading("budget")
-
-        assert data == "ok"
+    assert await client.async_get_reading("budget") == "ok"
 
 
 @pytest.mark.asyncio
-async def test_async_get_current_values(aresponses):
+async def test_async_get_current_values(aresponses, client: Efergy) -> None:
     """Test getting current values."""
     aresponses.add(
         "engage.efergy.com",
@@ -323,13 +290,12 @@ async def test_async_get_current_values(aresponses):
         ),
         match_querystring=True,
     )
-    async with ClientSession() as session:
-        client = Efergy(API_KEY, session=session, utc_offset="America/New_York")
-        data = await client.async_get_reading("current_values")
 
-        assert data["0"] == 1808
-        assert data["728386"] == 218
-        assert data["728387"] == 312
+    data = await client.async_get_reading("current_values")
+
+    assert data["0"] == 1808
+    assert data["728386"] == 218
+    assert data["728387"] == 312
 
     aresponses.add(
         "engage.efergy.com",
@@ -343,15 +309,11 @@ async def test_async_get_current_values(aresponses):
         match_querystring=True,
     )
 
-    async with ClientSession() as session:
-        client = Efergy(API_KEY, session=session, utc_offset="America/New_York")
-        data = await client.async_get_reading("current_values", sid="0")
-
-        assert data == 1808
+    assert await client.async_get_reading("current_values", sid="0") == 1808
 
 
 @pytest.mark.asyncio
-async def test_async_hid_simple_tarrif(aresponses):
+async def test_async_hid_simple_tarrif(aresponses, client: Efergy) -> None:
     """Test creating hid simple tarrif."""
     aresponses.add(
         "engage.efergy.com",
@@ -363,15 +325,12 @@ async def test_async_hid_simple_tarrif(aresponses):
         ),
         match_querystring=True,
     )
-    async with ClientSession() as session:
-        client = Efergy(API_KEY, session=session, utc_offset="America/New_York")
-        response = await client.async_hid_simple_tarrif(0.05)
 
-        assert response == {}
+    assert await client.async_hid_simple_tarrif(0.05) == {}
 
 
 @pytest.mark.asyncio
-async def test_async_carbon(aresponses):
+async def test_async_carbon(aresponses, client: Efergy) -> None:
     """Test getting carbon reading."""
     aresponses.add(
         "engage.efergy.com",
@@ -384,19 +343,14 @@ async def test_async_carbon(aresponses):
         ),
         match_querystring=True,
     )
-    async with ClientSession() as session:
-        client = Efergy(
-            API_KEY,
-            session=session,
-            utc_offset="America/New_York",
-        )
-        data = await client.async_carbon(period="day", fromtime=0, totime=1)
 
-        assert data["sum"] == "47.84"
+    data = await client.async_carbon(period="day", fromtime=0, totime=1)
+
+    assert data["sum"] == "47.84"
 
 
 @pytest.mark.asyncio
-async def test_async_channel_aggregated(aresponses):
+async def test_async_channel_aggregated(aresponses, client: Efergy) -> None:
     """Test getting aggregated channels."""
     aresponses.add(
         "engage.efergy.com",
@@ -409,22 +363,21 @@ async def test_async_channel_aggregated(aresponses):
         ),
         match_querystring=True,
     )
-    async with ClientSession() as session:
-        client = Efergy(API_KEY, session=session, utc_offset="America/New_York")
-        data = await client.async_channel_aggregated(
-            fromtime=0,
-            totime=1,
-            aggperiod="week",
-            type_str="none",
-            aggfunc="sum",
-            cachekey=3,
-        )
 
-        assert data["status"] == "ok"
+    data = await client.async_channel_aggregated(
+        fromtime=0,
+        totime=1,
+        aggperiod="week",
+        type_str="none",
+        aggfunc="sum",
+        cachekey=3,
+    )
+
+    assert data["status"] == "ok"
 
 
 @pytest.mark.asyncio
-async def test_async_comp_combined(aresponses):
+async def test_async_comp_combined(aresponses, client: Efergy) -> None:
     """Test getting comparison data."""
     aresponses.add(
         "engage.efergy.com",
@@ -437,15 +390,14 @@ async def test_async_comp_combined(aresponses):
         ),
         match_querystring=True,
     )
-    async with ClientSession() as session:
-        client = Efergy(API_KEY, session=session, utc_offset="America/New_York")
-        data = await client.async_comp_combined()
 
-        assert data["day"]["avg"]["sum"] == 0
+    data = await client.async_comp_combined()
+
+    assert data["day"]["avg"]["sum"] == 0
 
 
 @pytest.mark.asyncio
-async def test_async_comp_day(aresponses):
+async def test_async_comp_day(aresponses, client: Efergy) -> None:
     """Test getting comparison data."""
     aresponses.add(
         "engage.efergy.com",
@@ -458,15 +410,14 @@ async def test_async_comp_day(aresponses):
         ),
         match_querystring=True,
     )
-    async with ClientSession() as session:
-        client = Efergy(API_KEY, session=session, utc_offset="America/New_York")
-        data = await client.async_comp_day()
 
-        assert data["day"]["avg"]["sum"] == 0
+    data = await client.async_comp_day()
+
+    assert data["day"]["avg"]["sum"] == 0
 
 
 @pytest.mark.asyncio
-async def test_async_comp_week(aresponses):
+async def test_async_comp_week(aresponses, client: Efergy) -> None:
     """Test getting comparison data."""
     aresponses.add(
         "engage.efergy.com",
@@ -479,15 +430,14 @@ async def test_async_comp_week(aresponses):
         ),
         match_querystring=True,
     )
-    async with ClientSession() as session:
-        client = Efergy(API_KEY, session=session, utc_offset="America/New_York")
-        data = await client.async_comp_week()
 
-        assert data["week"]["avg"]["sum"] == 0
+    data = await client.async_comp_week()
+
+    assert data["week"]["avg"]["sum"] == 0
 
 
 @pytest.mark.asyncio
-async def test_async_comp_month(aresponses):
+async def test_async_comp_month(aresponses, client: Efergy) -> None:
     """Test getting comparison data."""
     aresponses.add(
         "engage.efergy.com",
@@ -500,15 +450,14 @@ async def test_async_comp_month(aresponses):
         ),
         match_querystring=True,
     )
-    async with ClientSession() as session:
-        client = Efergy(API_KEY, session=session, utc_offset="America/New_York")
-        data = await client.async_comp_month()
 
-        assert data["month"]["avg"]["sum"] == 0
+    data = await client.async_comp_month()
+
+    assert data["month"]["avg"]["sum"] == 0
 
 
 @pytest.mark.asyncio
-async def test_async_comp_year(aresponses):
+async def test_async_comp_year(aresponses, client: Efergy) -> None:
     """Test getting comparison data."""
     aresponses.add(
         "engage.efergy.com",
@@ -521,15 +470,14 @@ async def test_async_comp_year(aresponses):
         ),
         match_querystring=True,
     )
-    async with ClientSession() as session:
-        client = Efergy(API_KEY, session=session, utc_offset="America/New_York")
-        data = await client.async_comp_year()
 
-        assert data["year"]["avg"]["sum"] == 0
+    data = await client.async_comp_year()
+
+    assert data["year"]["avg"]["sum"] == 0
 
 
 @pytest.mark.asyncio
-async def test_async_consumption_co2_graph(aresponses):
+async def test_async_consumption_co2_graph(aresponses, client: Efergy) -> None:
     """Test getting consumption co2 data."""
     aresponses.add(
         "engage.efergy.com",
@@ -542,17 +490,16 @@ async def test_async_consumption_co2_graph(aresponses):
         ),
         match_querystring=True,
     )
-    async with ClientSession() as session:
-        client = Efergy(API_KEY, session=session, utc_offset="America/New_York")
-        data = await client.async_consumption_co2_graph(
-            fromtime=1637884800, totime=1638489600000, aggperiod="week", cachekey=3
-        )
 
-        assert data["status"] == "ok"
+    data = await client.async_consumption_co2_graph(
+        fromtime=1637884800, totime=1638489600000, aggperiod="week", cachekey=3
+    )
+
+    assert data["status"] == "ok"
 
 
 @pytest.mark.asyncio
-async def test_async_consumption_import(aresponses):
+async def test_async_consumption_import(aresponses, client: Efergy) -> None:
     """Test getting consumption import data."""
     aresponses.add(
         "engage.efergy.com",
@@ -565,17 +512,16 @@ async def test_async_consumption_import(aresponses):
         ),
         match_querystring=True,
     )
-    async with ClientSession() as session:
-        client = Efergy(API_KEY, session=session, utc_offset="America/New_York")
-        data = await client.async_generated_consumption_import(
-            fromtime=1637884800, totime=1638489600, cachekey=3
-        )
 
-        assert data == {"consumption": 0, "generated": 0, "imported": 0}
+    data = await client.async_generated_consumption_import(
+        fromtime=1637884800, totime=1638489600, cachekey=3
+    )
+
+    assert data == {"consumption": 0, "generated": 0, "imported": 0}
 
 
 @pytest.mark.asyncio
-async def test_async_generated_consumption_export(aresponses):
+async def test_async_generated_consumption_export(aresponses, client: Efergy) -> None:
     """Test getting consumption export data."""
     aresponses.add(
         "engage.efergy.com",
@@ -588,22 +534,21 @@ async def test_async_generated_consumption_export(aresponses):
         ),
         match_querystring=True,
     )
-    async with ClientSession() as session:
-        client = Efergy(API_KEY, session=session, utc_offset="America/New_York")
-        data = await client.async_generated_consumption_export(
-            fromtime=1637884800, totime=1638489600, cachekey=3
-        )
 
-        assert data == {
-            "consumedInHome": 0,
-            "diverted": 0,
-            "exported": 0,
-            "generated": 0,
-        }
+    data = await client.async_generated_consumption_export(
+        fromtime=1637884800, totime=1638489600, cachekey=3
+    )
+
+    assert data == {
+        "consumedInHome": 0,
+        "diverted": 0,
+        "exported": 0,
+        "generated": 0,
+    }
 
 
 @pytest.mark.asyncio
-async def test_async_country_list(aresponses):
+async def test_async_country_list(aresponses, client: Efergy) -> None:
     """Test getting consumption co2 data."""
     aresponses.add(
         "engage.efergy.com",
@@ -616,15 +561,14 @@ async def test_async_country_list(aresponses):
         ),
         match_querystring=True,
     )
-    async with ClientSession() as session:
-        client = Efergy(API_KEY, session=session, utc_offset="America/New_York")
-        data = await client.async_country_list()
 
-        assert data["UNITED KINGDOM"] == "230"
+    data = await client.async_country_list()
+
+    assert data["UNITED KINGDOM"] == "230"
 
 
 @pytest.mark.asyncio
-async def test_async_day(aresponses):
+async def test_async_day(aresponses, client: Efergy) -> None:
     """Test getting day data."""
     aresponses.add(
         "engage.efergy.com",
@@ -637,15 +581,12 @@ async def test_async_day(aresponses):
         ),
         match_querystring=True,
     )
-    async with ClientSession() as session:
-        client = Efergy(API_KEY, session=session, utc_offset="America/New_York")
-        data = await client.async_day()
 
-        assert data == {"1638552960000": [0.3, 0.33]}
+    assert await client.async_day() == {"1638552960000": [0.3, 0.33]}
 
 
 @pytest.mark.asyncio
-async def test_async_week(aresponses):
+async def test_async_week(aresponses, client: Efergy) -> None:
     """Test getting week data."""
     aresponses.add(
         "engage.efergy.com",
@@ -658,15 +599,14 @@ async def test_async_week(aresponses):
         ),
         match_querystring=True,
     )
-    async with ClientSession() as session:
-        client = Efergy(API_KEY, session=session, utc_offset="America/New_York")
-        data = await client.async_week()
 
-        assert data == {"1638032400000": [0.29, 0.29]}
+    data = await client.async_week()
+
+    assert data == {"1638032400000": [0.29, 0.29]}
 
 
 @pytest.mark.asyncio
-async def test_async_month(aresponses):
+async def test_async_month(aresponses, client: Efergy) -> None:
     """Test getting month data."""
     aresponses.add(
         "engage.efergy.com",
@@ -679,15 +619,12 @@ async def test_async_month(aresponses):
         ),
         match_querystring=True,
     )
-    async with ClientSession() as session:
-        client = Efergy(API_KEY, session=session, utc_offset="America/New_York")
-        data = await client.async_month()
 
-        assert data == {"1636156800000": [10.29, 13.81]}
+    assert await client.async_month() == {"1636156800000": [10.29, 13.81]}
 
 
 @pytest.mark.asyncio
-async def test_async_year(aresponses):
+async def test_async_year(aresponses, client: Efergy) -> None:
     """Test getting year data."""
     aresponses.add(
         "engage.efergy.com",
@@ -700,15 +637,12 @@ async def test_async_year(aresponses):
         ),
         match_querystring=True,
     )
-    async with ClientSession() as session:
-        client = Efergy(API_KEY, session=session, utc_offset="America/New_York")
-        data = await client.async_year()
 
-        assert data == {"1606780800000": [421.41]}
+    assert await client.async_year() == {"1606780800000": [421.41]}
 
 
 @pytest.mark.asyncio
-async def test_async_estimated_combined(aresponses):
+async def test_async_estimated_combined(aresponses, client: Efergy) -> None:
     """Test getting estimated combined usage data."""
     aresponses.add(
         "engage.efergy.com",
@@ -721,15 +655,14 @@ async def test_async_estimated_combined(aresponses):
         ),
         match_querystring=True,
     )
-    async with ClientSession() as session:
-        client = Efergy(API_KEY, session=session, utc_offset="America/New_York")
-        data = await client.async_estimated_combined()
 
-        assert data["day_kwh"] == {"estimate": 11.73}
+    data = await client.async_estimated_combined()
+
+    assert data["day_kwh"] == {"estimate": 11.73}
 
 
 @pytest.mark.asyncio
-async def test_async_first_data(aresponses):
+async def test_async_first_data(aresponses, client: Efergy) -> None:
     """Test getting first data."""
     aresponses.add(
         "engage.efergy.com",
@@ -742,15 +675,14 @@ async def test_async_first_data(aresponses):
         ),
         match_querystring=True,
     )
-    async with ClientSession() as session:
-        client = Efergy(API_KEY, session=session, utc_offset="America/New_York")
-        data = await client.async_first_data()
 
-        assert data["status"] == "ok"
+    data = await client.async_first_data()
+
+    assert data["status"] == "ok"
 
 
 @pytest.mark.asyncio
-async def test_async_forecast(aresponses):
+async def test_async_forecast(aresponses, client: Efergy) -> None:
     """Test getting consumption forecast data."""
     aresponses.add(
         "engage.efergy.com",
@@ -763,15 +695,16 @@ async def test_async_forecast(aresponses):
         ),
         match_querystring=True,
     )
-    async with ClientSession() as session:
-        client = Efergy(API_KEY, session=session, utc_offset="America/New_York")
-        data = await client.async_forecast(period="day")
 
-        assert data["day_kwh"] == {"estimate": 11.75}
+    data = await client.async_forecast(period="day")
+
+    assert data["day_kwh"] == {"estimate": 11.75}
 
 
 @pytest.mark.asyncio
-async def test_async_generated_energy_revenue_carbon(aresponses):
+async def test_async_generated_energy_revenue_carbon(
+    aresponses, client: Efergy
+) -> None:
     """Test getting generated energy revenue carbon data."""
     aresponses.add(
         "engage.efergy.com",
@@ -784,17 +717,16 @@ async def test_async_generated_energy_revenue_carbon(aresponses):
         ),
         match_querystring=True,
     )
-    async with ClientSession() as session:
-        client = Efergy(API_KEY, session=session, utc_offset="America/New_York")
-        data = await client.async_generated_energy_revenue_carbon(
-            1637884800, 1638489600, aggperiod="week", cachekey=3
-        )
 
-        assert data["status"] == "ok"
+    data = await client.async_generated_energy_revenue_carbon(
+        1637884800, 1638489600, aggperiod="week", cachekey=3
+    )
+
+    assert data["status"] == "ok"
 
 
 @pytest.mark.asyncio
-async def test_async_generated_consumption_graph(aresponses):
+async def test_async_generated_consumption_graph(aresponses, client: Efergy) -> None:
     """Test getting generated consumption graph data."""
     aresponses.add(
         "engage.efergy.com",
@@ -807,21 +739,22 @@ async def test_async_generated_consumption_graph(aresponses):
         ),
         match_querystring=True,
     )
-    async with ClientSession() as session:
-        client = Efergy(API_KEY, session=session, utc_offset="America/New_York")
-        data = await client.async_generated_consumption_graph(
-            1637884800, 1638489600, aggperiod="week", cachekey=3
-        )
 
-        assert data["status"] == "ok"
+    data = await client.async_generated_consumption_graph(
+        1637884800, 1638489600, aggperiod="week", cachekey=3
+    )
+
+    assert data["status"] == "ok"
 
 
 @pytest.mark.asyncio
-async def test_async_generated_consumption_graph_costrev(aresponses):
+async def test_async_generated_consumption_graph_costrev(
+    aresponses, client: Efergy
+) -> None:
     """Test getting generated consumption cost and revenue graph data."""
     aresponses.add(
         "engage.efergy.com",
-        "/mobile_proxy/getGenerationConsumptionGraphCostRevenue?token=ur1234567-0abc12de3f456gh7ij89k012&offset=0&aggPeriod=week&fromTime=1637884800&toTime=1638489600&cacheTTL=60&cacheKey=3",
+        "/mobile_proxy/getGenerationConsumptionGraphCostRevenue?token=ur1234567-0abc12de3f456gh7ij89k012&offset=300&aggPeriod=week&fromTime=1637884800&toTime=1638489600&cacheTTL=60&cacheKey=3",
         "GET",
         aresponses.Response(
             status=200,
@@ -830,17 +763,16 @@ async def test_async_generated_consumption_graph_costrev(aresponses):
         ),
         match_querystring=True,
     )
-    async with ClientSession() as session:
-        client = Efergy(API_KEY, session=session)
-        data = await client.async_generated_consumption_graph_costrev(
-            1637884800, 1638489600, aggperiod="week", cachekey=3
-        )
 
-        assert data["status"] == "ok"
+    data = await client.async_generated_consumption_graph_costrev(
+        1637884800, 1638489600, aggperiod="week", cachekey=3
+    )
+
+    assert data["status"] == "ok"
 
 
 @pytest.mark.asyncio
-async def test_async_historical_values(aresponses):
+async def test_async_historical_values(aresponses, client: Efergy) -> None:
     """Test getting historical data."""
     aresponses.add(
         "engage.efergy.com",
@@ -853,15 +785,14 @@ async def test_async_historical_values(aresponses):
         ),
         match_querystring=True,
     )
-    async with ClientSession() as session:
-        client = Efergy(API_KEY, session=session, utc_offset="America/New_York")
-        data = await client.async_historical_values(period="week")
 
-        assert data["status"] == "ok"
+    data = await client.async_historical_values(period="week")
+
+    assert data["status"] == "ok"
 
 
 @pytest.mark.asyncio
-async def test_async_household(aresponses):
+async def test_async_household(aresponses, client: Efergy) -> None:
     """Test getting household data."""
     aresponses.add(
         "engage.efergy.com",
@@ -874,15 +805,14 @@ async def test_async_household(aresponses):
         ),
         match_querystring=True,
     )
-    async with ClientSession() as session:
-        client = Efergy(API_KEY, session=session, utc_offset="America/New_York")
-        data = await client.async_household()
 
-        assert data["ageOfProperty"] == "5"
+    data = await client.async_household()
+
+    assert data["ageOfProperty"] == "5"
 
 
 @pytest.mark.asyncio
-async def test_async_household_data_reference(aresponses):
+async def test_async_household_data_reference(aresponses, client: Efergy) -> None:
     """Test getting household data reference."""
     aresponses.add(
         "engage.efergy.com",
@@ -895,15 +825,14 @@ async def test_async_household_data_reference(aresponses):
         ),
         match_querystring=True,
     )
-    async with ClientSession() as session:
-        client = Efergy(API_KEY, session=session, utc_offset="America/New_York")
-        data = await client.async_household_data_reference()
 
-        assert data["profileoptions"]["ageOfProperty"]["values"][0]["key"] == "Pre 1851"
+    data = await client.async_household_data_reference()
+
+    assert data["profileoptions"]["ageOfProperty"]["values"][0]["key"] == "Pre 1851"
 
 
 @pytest.mark.asyncio
-async def test_async_mac(aresponses):
+async def test_async_mac(aresponses, client: Efergy) -> None:
     """Test getting mac addresses."""
     aresponses.add(
         "engage.efergy.com",
@@ -916,15 +845,14 @@ async def test_async_mac(aresponses):
         ),
         match_querystring=True,
     )
-    async with ClientSession() as session:
-        client = Efergy(API_KEY, session=session, utc_offset="America/New_York")
-        data = await client.async_mac()
 
-        assert data["listOfMacs"][0]["mac"] == "0004A3111111"
+    data = await client.async_mac()
+
+    assert data["listOfMacs"][0]["mac"] == "0004A3111111"
 
 
 @pytest.mark.asyncio
-async def test_async_mac_status(aresponses):
+async def test_async_mac_status(aresponses, client: Efergy) -> None:
     """Test getting mac address data."""
     aresponses.add(
         "engage.efergy.com",
@@ -937,15 +865,14 @@ async def test_async_mac_status(aresponses):
         ),
         match_querystring=True,
     )
-    async with ClientSession() as session:
-        client = Efergy(API_KEY, session=session, utc_offset="America/New_York")
-        data = await client.async_mac_status("0004A3905474")
 
-        assert data["listOfMacs"][0]["mac"] == "0004A3111111"
+    data = await client.async_mac_status("0004A3905474")
+
+    assert data["listOfMacs"][0]["mac"] == "0004A3111111"
 
 
 @pytest.mark.asyncio
-async def test_async_pulse(aresponses):
+async def test_async_pulse(aresponses, client: Efergy) -> None:
     """Test getting sid pulse data."""
     aresponses.add(
         "engage.efergy.com",
@@ -958,16 +885,15 @@ async def test_async_pulse(aresponses):
         ),
         match_querystring=True,
     )
-    async with ClientSession() as session:
-        client = Efergy(API_KEY, session=session, utc_offset="America/New_York")
-        data = await client.async_pulse(1)
 
-        assert data["status"] == "ok"
-        assert data["pulses"] == 1000
+    data = await client.async_pulse(1)
+
+    assert data["status"] == "ok"
+    assert data["pulses"] == 1000
 
 
 @pytest.mark.asyncio
-async def test_async_status(aresponses):
+async def test_async_status(aresponses, client: Efergy) -> None:
     """Test getting device status."""
     aresponses.add(
         "engage.efergy.com",
@@ -991,21 +917,18 @@ async def test_async_status(aresponses):
         ),
         match_querystring=True,
     )
-    async with ClientSession() as session:
-        client = Efergy(API_KEY, session=session, utc_offset="America/New_York")
-        await client.async_status(get_sids=True)
 
-        assert client.info["hid"] == "1234567890abcdef1234567890abcdef"
-        assert client.info["mac"] == "ffffffffffff"
-        assert client.info["status"] == "on"
-        assert client.info["type"] == "EEEHub"
-        assert client.info["version"] == "2.3.7"
+    await client.async_status(get_sids=True)
 
-    await test_async_get_sids(aresponses)
+    assert client.info["hid"] == "1234567890abcdef1234567890abcdef"
+    assert client.info["mac"] == "ffffffffffff"
+    assert client.info["status"] == "on"
+    assert client.info["type"] == "EEEHub"
+    assert client.info["version"] == "2.3.7"
 
 
 @pytest.mark.asyncio
-async def test_async_tariff(aresponses):
+async def test_async_tariff(aresponses, client: Efergy) -> None:
     """Test getting tariff data."""
     aresponses.add(
         "engage.efergy.com",
@@ -1018,15 +941,14 @@ async def test_async_tariff(aresponses):
         ),
         match_querystring=True,
     )
-    async with ClientSession() as session:
-        client = Efergy(API_KEY, session=session, utc_offset="America/New_York")
-        data = await client.async_tariff()
 
-        assert data[0]["channel"] == "PWER"
+    data = await client.async_tariff()
+
+    assert data[0]["channel"] == "PWER"
 
 
 @pytest.mark.asyncio
-async def test_async_time_series(aresponses):
+async def test_async_time_series(aresponses, client: Efergy) -> None:
     """Test getting historical timeseries data."""
     aresponses.add(
         "engage.efergy.com",
@@ -1039,22 +961,21 @@ async def test_async_time_series(aresponses):
         ),
         match_querystring=True,
     )
-    async with ClientSession() as session:
-        client = Efergy(API_KEY, session=session, utc_offset="America/New_York")
-        data = await client.async_time_series(
-            1637884800,
-            1638489600,
-            aggperiod="week",
-            aggfunc="sum",
-            cache=True,
-            datatype="cost",
-        )
 
-        assert data == {"data": {"1637884800000": ["undef"]}, "status": "ok"}
+    data = await client.async_time_series(
+        1637884800,
+        1638489600,
+        aggperiod="week",
+        aggfunc="sum",
+        cache=True,
+        datatype="cost",
+    )
+
+    assert data == {"data": {"1637884800000": ["undef"]}, "status": "ok"}
 
 
 @pytest.mark.asyncio
-async def test_async_weather(aresponses):
+async def test_async_weather(aresponses, client: Efergy) -> None:
     """Test getting weather data."""
     aresponses.add(
         "engage.efergy.com",
@@ -1067,15 +988,14 @@ async def test_async_weather(aresponses):
         ),
         match_querystring=True,
     )
-    async with ClientSession() as session:
-        client = Efergy(API_KEY, session=session, utc_offset="America/New_York")
-        data = await client.async_weather("Beijing", "China", timestamp=1637884800)
 
-        assert data["temp_F"] == "70"
+    data = await client.async_weather("Beijing", "China", timestamp=1637884800)
+
+    assert data["temp_F"] == "70"
 
 
 @pytest.mark.asyncio
-async def test_async_set_budget(aresponses):
+async def test_async_set_budget(aresponses, client: Efergy) -> None:
     """Test getting weather data."""
     aresponses.add(
         "engage.efergy.com",
@@ -1088,8 +1008,7 @@ async def test_async_set_budget(aresponses):
         ),
         match_querystring=True,
     )
-    async with ClientSession() as session:
-        client = Efergy(API_KEY, session=session, utc_offset="America/New_York")
-        data = await client.async_set_budget(100)
 
-        assert data == {"monthly_budget": 250.0, "status": "ok"}
+    data = await client.async_set_budget(100)
+
+    assert data == {"monthly_budget": 250.0, "status": "ok"}

@@ -14,6 +14,9 @@ test: ## Run all tests
 lint: ## Lint all files black
 	@isort .
 	@python3 -m black --fast .
+	@python3 -m pylint pyefergy tests
+	@python3 -m flake8 pyefergy tests
+	@python3 -m mypy pyefergy
 
 coverage: ## Check the coverage of the package
 	@python3 -m pytest tests -rxf -x -v -l --cov=./ --cov-report=xml > /dev/null
