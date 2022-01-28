@@ -2,10 +2,10 @@
 # pylint:disable=redefined-outer-name
 import asyncio
 
-from aiohttp import ClientSession
-from pyefergy import Efergy
 import pytest
+from aiohttp import ClientSession
 
+from pyefergy import Efergy
 from tests import API_KEY
 
 
@@ -25,5 +25,7 @@ async def apisession():
 @pytest.fixture()
 async def client(apisession):
     """Create Client."""
-    async with Efergy(API_KEY, session=apisession, utc_offset="America/New_York", currency="USD") as obj:
+    async with Efergy(
+        API_KEY, session=apisession, utc_offset="America/New_York", currency="USD"
+    ) as obj:
         yield obj

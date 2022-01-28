@@ -19,7 +19,7 @@ async def test_loop() -> None:
 
 
 @pytest.mark.asyncio
-async def test_init(aresponses, client: Efergy):
+async def test_init(aresponses, client: Efergy) -> None:
     """Test init."""
     aresponses.add(
         "engage.efergy.com",
@@ -49,14 +49,14 @@ async def test_init(aresponses, client: Efergy):
 
 
 @pytest.mark.asyncio
-async def test_error_400(aresponses, client: Efergy):
+async def test_error_400(aresponses, client: Efergy) -> None:
     """Test error 400."""
     aresponses.add(
         "engage.efergy.com",
         "/mobile_proxy/getCurrentValuesSummary?token=ur1234567-0abc12de3f456gh7ij89k012&offset=300",
         "GET",
         aresponses.Response(
-            status=200,
+            status=400,
             headers={"Content-Type": "text/html"},
             text=load_fixture("error400.json"),
         ),
@@ -68,7 +68,7 @@ async def test_error_400(aresponses, client: Efergy):
 
 
 @pytest.mark.asyncio
-async def test_error_400_2(aresponses, client: Efergy):
+async def test_error_400_2(aresponses, client: Efergy) -> None:
     """Test error 400."""
     aresponses.add(
         "engage.efergy.com",
@@ -87,7 +87,7 @@ async def test_error_400_2(aresponses, client: Efergy):
 
 
 @pytest.mark.asyncio
-async def test_error_404(aresponses, client: Efergy):
+async def test_error_404(aresponses, client: Efergy) -> None:
     """Test error 404."""
     aresponses.add(
         "engage.efergy.com",
@@ -106,7 +106,7 @@ async def test_error_404(aresponses, client: Efergy):
 
 
 @pytest.mark.asyncio
-async def test_error_500(aresponses, client: Efergy):
+async def test_error_500(aresponses, client: Efergy) -> None:
     """Test error 500."""
     aresponses.add(
         "engage.efergy.com",
@@ -125,7 +125,7 @@ async def test_error_500(aresponses, client: Efergy):
 
 
 @pytest.mark.asyncio
-async def test_error_403(aresponses, client: Efergy):
+async def test_error_403(aresponses, client: Efergy) -> None:
     """Test error 403."""
     aresponses.add(
         "engage.efergy.com",
@@ -144,7 +144,7 @@ async def test_error_403(aresponses, client: Efergy):
 
 
 @pytest.mark.asyncio
-async def test_timeout(aresponses, client: Efergy):
+async def test_timeout(aresponses, client: Efergy) -> None:
     """Test timeout."""
 
     async def response_handler():
@@ -163,7 +163,7 @@ async def test_timeout(aresponses, client: Efergy):
 
 
 @pytest.mark.asyncio
-async def test_method_call_failed(aresponses, client: Efergy):
+async def test_method_call_failed(aresponses, client: Efergy) -> None:
     """Test method call failed."""
     aresponses.add(
         "engage.efergy.com",
@@ -182,7 +182,7 @@ async def test_method_call_failed(aresponses, client: Efergy):
 
 
 @pytest.mark.asyncio
-async def test_async_get_sids(aresponses, client: Efergy):
+async def test_async_get_sids(aresponses, client: Efergy) -> None:
     """Test getting sids."""
     aresponses.add(
         "engage.efergy.com",
@@ -198,11 +198,11 @@ async def test_async_get_sids(aresponses, client: Efergy):
 
     await client.async_get_sids()
 
-    assert client.info == {'currency': 'USD', 'sids': ['728386', '0', '728387']}
+    assert client.info == {"currency": "USD", "sids": ["728386", "0", "728387"]}
 
 
 @pytest.mark.asyncio
-async def test_async_get_instant(aresponses, client: Efergy):
+async def test_async_get_instant(aresponses, client: Efergy) -> None:
     """Test getting instant reading."""
     aresponses.add(
         "engage.efergy.com",
@@ -221,7 +221,7 @@ async def test_async_get_instant(aresponses, client: Efergy):
 
 
 @pytest.mark.asyncio
-async def test_async_get_energy(aresponses, client: Efergy):
+async def test_async_get_energy(aresponses, client: Efergy) -> None:
     """Test getting energy reading."""
     aresponses.add(
         "engage.efergy.com",
@@ -241,7 +241,7 @@ async def test_async_get_energy(aresponses, client: Efergy):
 
 
 @pytest.mark.asyncio
-async def test_async_get_cost(aresponses, client: Efergy):
+async def test_async_get_cost(aresponses, client: Efergy) -> None:
     """Test getting cost reading."""
     aresponses.add(
         "engage.efergy.com",
@@ -259,7 +259,7 @@ async def test_async_get_cost(aresponses, client: Efergy):
 
 
 @pytest.mark.asyncio
-async def test_async_get_budget(aresponses, client: Efergy):
+async def test_async_get_budget(aresponses, client: Efergy) -> None:
     """Test getting budget."""
     aresponses.add(
         "engage.efergy.com",
@@ -276,7 +276,7 @@ async def test_async_get_budget(aresponses, client: Efergy):
 
 
 @pytest.mark.asyncio
-async def test_async_get_current_values(aresponses, client: Efergy):
+async def test_async_get_current_values(aresponses, client: Efergy) -> None:
     """Test getting current values."""
     aresponses.add(
         "engage.efergy.com",
@@ -312,7 +312,7 @@ async def test_async_get_current_values(aresponses, client: Efergy):
 
 
 @pytest.mark.asyncio
-async def test_async_hid_simple_tarrif(aresponses, client: Efergy):
+async def test_async_hid_simple_tarrif(aresponses, client: Efergy) -> None:
     """Test creating hid simple tarrif."""
     aresponses.add(
         "engage.efergy.com",
@@ -329,7 +329,7 @@ async def test_async_hid_simple_tarrif(aresponses, client: Efergy):
 
 
 @pytest.mark.asyncio
-async def test_async_carbon(aresponses, client: Efergy):
+async def test_async_carbon(aresponses, client: Efergy) -> None:
     """Test getting carbon reading."""
     aresponses.add(
         "engage.efergy.com",
@@ -349,7 +349,7 @@ async def test_async_carbon(aresponses, client: Efergy):
 
 
 @pytest.mark.asyncio
-async def test_async_channel_aggregated(aresponses, client: Efergy):
+async def test_async_channel_aggregated(aresponses, client: Efergy) -> None:
     """Test getting aggregated channels."""
     aresponses.add(
         "engage.efergy.com",
@@ -376,7 +376,7 @@ async def test_async_channel_aggregated(aresponses, client: Efergy):
 
 
 @pytest.mark.asyncio
-async def test_async_comp_combined(aresponses, client: Efergy):
+async def test_async_comp_combined(aresponses, client: Efergy) -> None:
     """Test getting comparison data."""
     aresponses.add(
         "engage.efergy.com",
@@ -396,7 +396,7 @@ async def test_async_comp_combined(aresponses, client: Efergy):
 
 
 @pytest.mark.asyncio
-async def test_async_comp_day(aresponses, client: Efergy):
+async def test_async_comp_day(aresponses, client: Efergy) -> None:
     """Test getting comparison data."""
     aresponses.add(
         "engage.efergy.com",
@@ -416,7 +416,7 @@ async def test_async_comp_day(aresponses, client: Efergy):
 
 
 @pytest.mark.asyncio
-async def test_async_comp_week(aresponses, client: Efergy):
+async def test_async_comp_week(aresponses, client: Efergy) -> None:
     """Test getting comparison data."""
     aresponses.add(
         "engage.efergy.com",
@@ -436,7 +436,7 @@ async def test_async_comp_week(aresponses, client: Efergy):
 
 
 @pytest.mark.asyncio
-async def test_async_comp_month(aresponses, client: Efergy):
+async def test_async_comp_month(aresponses, client: Efergy) -> None:
     """Test getting comparison data."""
     aresponses.add(
         "engage.efergy.com",
@@ -456,7 +456,7 @@ async def test_async_comp_month(aresponses, client: Efergy):
 
 
 @pytest.mark.asyncio
-async def test_async_comp_year(aresponses, client: Efergy):
+async def test_async_comp_year(aresponses, client: Efergy) -> None:
     """Test getting comparison data."""
     aresponses.add(
         "engage.efergy.com",
@@ -476,7 +476,7 @@ async def test_async_comp_year(aresponses, client: Efergy):
 
 
 @pytest.mark.asyncio
-async def test_async_consumption_co2_graph(aresponses, client: Efergy):
+async def test_async_consumption_co2_graph(aresponses, client: Efergy) -> None:
     """Test getting consumption co2 data."""
     aresponses.add(
         "engage.efergy.com",
@@ -498,7 +498,7 @@ async def test_async_consumption_co2_graph(aresponses, client: Efergy):
 
 
 @pytest.mark.asyncio
-async def test_async_consumption_import(aresponses, client: Efergy):
+async def test_async_consumption_import(aresponses, client: Efergy) -> None:
     """Test getting consumption import data."""
     aresponses.add(
         "engage.efergy.com",
@@ -520,7 +520,7 @@ async def test_async_consumption_import(aresponses, client: Efergy):
 
 
 @pytest.mark.asyncio
-async def test_async_generated_consumption_export(aresponses, client: Efergy):
+async def test_async_generated_consumption_export(aresponses, client: Efergy) -> None:
     """Test getting consumption export data."""
     aresponses.add(
         "engage.efergy.com",
@@ -547,7 +547,7 @@ async def test_async_generated_consumption_export(aresponses, client: Efergy):
 
 
 @pytest.mark.asyncio
-async def test_async_country_list(aresponses, client: Efergy):
+async def test_async_country_list(aresponses, client: Efergy) -> None:
     """Test getting consumption co2 data."""
     aresponses.add(
         "engage.efergy.com",
@@ -567,7 +567,7 @@ async def test_async_country_list(aresponses, client: Efergy):
 
 
 @pytest.mark.asyncio
-async def test_async_day(aresponses, client: Efergy):
+async def test_async_day(aresponses, client: Efergy) -> None:
     """Test getting day data."""
     aresponses.add(
         "engage.efergy.com",
@@ -585,7 +585,7 @@ async def test_async_day(aresponses, client: Efergy):
 
 
 @pytest.mark.asyncio
-async def test_async_week(aresponses, client: Efergy):
+async def test_async_week(aresponses, client: Efergy) -> None:
     """Test getting week data."""
     aresponses.add(
         "engage.efergy.com",
@@ -605,7 +605,7 @@ async def test_async_week(aresponses, client: Efergy):
 
 
 @pytest.mark.asyncio
-async def test_async_month(aresponses, client: Efergy):
+async def test_async_month(aresponses, client: Efergy) -> None:
     """Test getting month data."""
     aresponses.add(
         "engage.efergy.com",
@@ -623,7 +623,7 @@ async def test_async_month(aresponses, client: Efergy):
 
 
 @pytest.mark.asyncio
-async def test_async_year(aresponses, client: Efergy):
+async def test_async_year(aresponses, client: Efergy) -> None:
     """Test getting year data."""
     aresponses.add(
         "engage.efergy.com",
@@ -641,7 +641,7 @@ async def test_async_year(aresponses, client: Efergy):
 
 
 @pytest.mark.asyncio
-async def test_async_estimated_combined(aresponses, client: Efergy):
+async def test_async_estimated_combined(aresponses, client: Efergy) -> None:
     """Test getting estimated combined usage data."""
     aresponses.add(
         "engage.efergy.com",
@@ -661,7 +661,7 @@ async def test_async_estimated_combined(aresponses, client: Efergy):
 
 
 @pytest.mark.asyncio
-async def test_async_first_data(aresponses, client: Efergy):
+async def test_async_first_data(aresponses, client: Efergy) -> None:
     """Test getting first data."""
     aresponses.add(
         "engage.efergy.com",
@@ -681,7 +681,7 @@ async def test_async_first_data(aresponses, client: Efergy):
 
 
 @pytest.mark.asyncio
-async def test_async_forecast(aresponses, client: Efergy):
+async def test_async_forecast(aresponses, client: Efergy) -> None:
     """Test getting consumption forecast data."""
     aresponses.add(
         "engage.efergy.com",
@@ -701,7 +701,9 @@ async def test_async_forecast(aresponses, client: Efergy):
 
 
 @pytest.mark.asyncio
-async def test_async_generated_energy_revenue_carbon(aresponses, client: Efergy):
+async def test_async_generated_energy_revenue_carbon(
+    aresponses, client: Efergy
+) -> None:
     """Test getting generated energy revenue carbon data."""
     aresponses.add(
         "engage.efergy.com",
@@ -723,7 +725,7 @@ async def test_async_generated_energy_revenue_carbon(aresponses, client: Efergy)
 
 
 @pytest.mark.asyncio
-async def test_async_generated_consumption_graph(aresponses, client: Efergy):
+async def test_async_generated_consumption_graph(aresponses, client: Efergy) -> None:
     """Test getting generated consumption graph data."""
     aresponses.add(
         "engage.efergy.com",
@@ -745,7 +747,9 @@ async def test_async_generated_consumption_graph(aresponses, client: Efergy):
 
 
 @pytest.mark.asyncio
-async def test_async_generated_consumption_graph_costrev(aresponses, client: Efergy):
+async def test_async_generated_consumption_graph_costrev(
+    aresponses, client: Efergy
+) -> None:
     """Test getting generated consumption cost and revenue graph data."""
     aresponses.add(
         "engage.efergy.com",
@@ -767,7 +771,7 @@ async def test_async_generated_consumption_graph_costrev(aresponses, client: Efe
 
 
 @pytest.mark.asyncio
-async def test_async_historical_values(aresponses, client: Efergy):
+async def test_async_historical_values(aresponses, client: Efergy) -> None:
     """Test getting historical data."""
     aresponses.add(
         "engage.efergy.com",
@@ -787,7 +791,7 @@ async def test_async_historical_values(aresponses, client: Efergy):
 
 
 @pytest.mark.asyncio
-async def test_async_household(aresponses, client: Efergy):
+async def test_async_household(aresponses, client: Efergy) -> None:
     """Test getting household data."""
     aresponses.add(
         "engage.efergy.com",
@@ -807,7 +811,7 @@ async def test_async_household(aresponses, client: Efergy):
 
 
 @pytest.mark.asyncio
-async def test_async_household_data_reference(aresponses, client: Efergy):
+async def test_async_household_data_reference(aresponses, client: Efergy) -> None:
     """Test getting household data reference."""
     aresponses.add(
         "engage.efergy.com",
@@ -827,7 +831,7 @@ async def test_async_household_data_reference(aresponses, client: Efergy):
 
 
 @pytest.mark.asyncio
-async def test_async_mac(aresponses, client: Efergy):
+async def test_async_mac(aresponses, client: Efergy) -> None:
     """Test getting mac addresses."""
     aresponses.add(
         "engage.efergy.com",
@@ -847,7 +851,7 @@ async def test_async_mac(aresponses, client: Efergy):
 
 
 @pytest.mark.asyncio
-async def test_async_mac_status(aresponses, client: Efergy):
+async def test_async_mac_status(aresponses, client: Efergy) -> None:
     """Test getting mac address data."""
     aresponses.add(
         "engage.efergy.com",
@@ -867,7 +871,7 @@ async def test_async_mac_status(aresponses, client: Efergy):
 
 
 @pytest.mark.asyncio
-async def test_async_pulse(aresponses, client: Efergy):
+async def test_async_pulse(aresponses, client: Efergy) -> None:
     """Test getting sid pulse data."""
     aresponses.add(
         "engage.efergy.com",
@@ -888,7 +892,7 @@ async def test_async_pulse(aresponses, client: Efergy):
 
 
 @pytest.mark.asyncio
-async def test_async_status(aresponses, client: Efergy):
+async def test_async_status(aresponses, client: Efergy) -> None:
     """Test getting device status."""
     aresponses.add(
         "engage.efergy.com",
@@ -923,7 +927,7 @@ async def test_async_status(aresponses, client: Efergy):
 
 
 @pytest.mark.asyncio
-async def test_async_tariff(aresponses, client: Efergy):
+async def test_async_tariff(aresponses, client: Efergy) -> None:
     """Test getting tariff data."""
     aresponses.add(
         "engage.efergy.com",
@@ -943,7 +947,7 @@ async def test_async_tariff(aresponses, client: Efergy):
 
 
 @pytest.mark.asyncio
-async def test_async_time_series(aresponses, client: Efergy):
+async def test_async_time_series(aresponses, client: Efergy) -> None:
     """Test getting historical timeseries data."""
     aresponses.add(
         "engage.efergy.com",
@@ -970,7 +974,7 @@ async def test_async_time_series(aresponses, client: Efergy):
 
 
 @pytest.mark.asyncio
-async def test_async_weather(aresponses, client: Efergy):
+async def test_async_weather(aresponses, client: Efergy) -> None:
     """Test getting weather data."""
     aresponses.add(
         "engage.efergy.com",
@@ -990,7 +994,7 @@ async def test_async_weather(aresponses, client: Efergy):
 
 
 @pytest.mark.asyncio
-async def test_async_set_budget(aresponses, client: Efergy):
+async def test_async_set_budget(aresponses, client: Efergy) -> None:
     """Test getting weather data."""
     aresponses.add(
         "engage.efergy.com",
