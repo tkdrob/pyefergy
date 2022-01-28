@@ -47,10 +47,13 @@ TIMEOUT = 10
 class Efergy:
     """Implementation of Efergy object."""
 
+    _close_session = False
+    _from_aenter = False
+
     def __init__(
         self,
         api_key: str,
-        session: ClientSession = None,
+        session: ClientSession | None = None,
         **kwargs: Any,
     ) -> None:
         """Initialize.
@@ -61,11 +64,24 @@ class Efergy:
 
         Set alt to true to use the alternate API endpoint.
         """
-        self._session = session or ClientSession()
+        if session is None:
+            session = ClientSession()
+            self._close_session = True
+        self._session = session
         self.info: dict[str, str | list[str]] = {}
         self._utc_offset = 0
         self._cachettl = 60
         self.update_params(api_key=api_key, **kwargs)
+
+    async def __aenter__(self) -> Efergy:
+        """Async enter."""
+        self._from_aenter = True
+        return self
+
+    async def __aexit__(self, *exc_info) -> None:
+        """Async exit."""
+        if self._session and self._close_session:
+            await self._session.close()
 
     def api_url(self, command: str) -> str:
         """Return the generated base URL based on host configuration."""
