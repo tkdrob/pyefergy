@@ -3,8 +3,8 @@
 import asyncio
 import json
 
-import pytest
 from aiohttp.client import ClientSession
+import pytest
 
 import pyefergy
 from pyefergy import Efergy

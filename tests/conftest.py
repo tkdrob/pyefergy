@@ -2,10 +2,11 @@
 # pylint:disable=redefined-outer-name
 import asyncio
 
-import pytest
 from aiohttp import ClientSession
+import pytest
 
 from pyefergy import Efergy
+
 from tests import API_KEY
 
 
