@@ -198,8 +198,6 @@ async def test_async_get_sids(aresponses, client: Efergy) -> None:
     )
 
     await client.async_get_sids()
-
-    assert client.info == {"currency": "USD"}
     assert client.sids == [728386, 0, 728387]
 
 
@@ -217,9 +215,7 @@ async def test_async_get_instant(aresponses, client: Efergy) -> None:
         ),
         match_querystring=True,
     )
-    data = await client.async_get_reading("instant_readings")
-
-    assert data == 1580
+    assert await client.async_get_reading("instant_readings") == 1580
 
 
 @pytest.mark.asyncio
@@ -237,9 +233,7 @@ async def test_async_get_energy(aresponses, client: Efergy) -> None:
         match_querystring=True,
     )
 
-    data = await client.async_get_reading("energy", period="day")
-
-    assert data == "38.21"
+    assert await client.async_get_reading("energy", period="day") == "38.21"
 
 
 @pytest.mark.asyncio
@@ -601,9 +595,7 @@ async def test_async_week(aresponses, client: Efergy) -> None:
         match_querystring=True,
     )
 
-    data = await client.async_week()
-
-    assert data == {"1638032400000": [0.29, 0.29]}
+    assert await client.async_week() == {"1638032400000": [0.29, 0.29]}
 
 
 @pytest.mark.asyncio
