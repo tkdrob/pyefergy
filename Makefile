@@ -19,8 +19,7 @@ lint: ## Lint all files black
 	@python3 -m mypy pyefergy
 
 coverage: ## Check the coverage of the package
-	@python3 -m pytest tests -rxf -x -v -l --cov=./ --cov-report=xml > /dev/null
-	@coverage report
+	@python3 -m pytest tests --cov=pyefergy --cov-report term-missing -vv
 
 setup: ## Setup the package
 	@python3 setup.py develop

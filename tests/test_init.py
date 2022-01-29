@@ -199,7 +199,8 @@ async def test_async_get_sids(aresponses, client: Efergy) -> None:
 
     await client.async_get_sids()
 
-    assert client.info == {"currency": "USD", "sids": ["728386", "0", "728387"]}
+    assert client.info == {"currency": "USD"}
+    assert client.sids == [728386, 0, 728387]
 
 
 @pytest.mark.asyncio
@@ -309,7 +310,7 @@ async def test_async_get_current_values(aresponses, client: Efergy) -> None:
         match_querystring=True,
     )
 
-    assert await client.async_get_reading("current_values", sid="0") == 1808
+    assert await client.async_get_reading("current_values", sid=0) == 1808
 
 
 @pytest.mark.asyncio

@@ -67,7 +67,8 @@ class Efergy:  # pylint:disable=too-many-instance-attributes
             session = ClientSession()
             self._close_session = True
         self._session = session
-        self.info: dict[str, str | list[str]] = {}
+        self.info: dict[str, str] = {}
+        self.sids: list[int] = []
         self._utc_offset = 0
         self._cachettl = 60
         self.update_params(api_key=api_key, **kwargs)
@@ -159,15 +160,15 @@ class Efergy:  # pylint:disable=too-many-instance-attributes
         """Get current values sids."""
         sids = []
         for sid in await self._async_req("getCurrentValuesSummary"):
-            sids.append(sid[SID])
-        self.info["sids"] = sids
+            sids.append(int(sid[SID]))
+        self.sids = sids
 
     async def async_get_reading(
         self,
         reading_type: str,
-        period: str = DEFAULT_PERIOD,
-        sid: str = None,
-    ) -> str | int | dict[str, int]:
+        period: str | None = DEFAULT_PERIOD,
+        sid: int | None = None,
+    ) -> str | int | float | dict[str, int]:
         """Get reading for instant, budget, or summary.
 
         'reading_type' can be any of the following:
@@ -213,7 +214,7 @@ class Efergy:  # pylint:disable=too-many-instance-attributes
             return _data[type_str]
         _readings = {}
         for sensor in _data:
-            if sid == sensor[SID]:
+            if sid == int(sensor[SID]):
                 return list(sensor[DATA][0].values())[0]
             _readings[sensor[SID]] = list(sensor[DATA][0].values())[0]
         return _readings
