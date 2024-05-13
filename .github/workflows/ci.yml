@@ -54,6 +54,6 @@ jobs:
       - name: Install dependencies
         run: poetry install
       - name: 📤 Upload coverage to Codecov
-        run: |
-          poetry run pytest
-          curl -sfSL https://codecov.io/bash | bash -
+        uses: codecov/codecov-action@v4.3.1
+        with:
+          verbose: true
