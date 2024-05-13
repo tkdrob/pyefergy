@@ -51,5 +51,5 @@ jobs:
         run: poetry install
       - name: 📤 Upload coverage to Codecov
         run: |
-          make coverage
+          poetry run pytest
           curl -sfSL https://codecov.io/bash | bash -
