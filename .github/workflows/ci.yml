@@ -42,6 +42,8 @@ jobs:
     steps:
       - name: 📥 Checkout the repository
         uses: actions/checkout@v4.1.2
+        with:
+          fetch-depth: 0
       - name: Install poetry
         run: pip install poetry==1.8.2
       - name: 🛠️ Set up Python
