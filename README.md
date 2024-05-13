@@ -44,7 +44,7 @@ asyncio.get_event_loop().run_until_complete(async_example())
 3. Install poetry
 4. Install dependencies: `poetry install`
 5. Do your changes
-6. Lint the files with `poetry run pylint pyefergy && black . && poetry run ruff check && poetry run mypy pyefergy`
+6. Lint the files with `poetry run pylint pyefergy && black . && ruff check && mypy pyefergy`
 7. Ensure all tests pass with `poetry run pytest`
 8. Ensure 100% coverage
 9. Commit your work, and push it to GitHub
