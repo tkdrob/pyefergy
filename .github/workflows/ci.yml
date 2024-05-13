@@ -26,7 +26,7 @@ jobs:
       - name: 🧹 Lint files with pylint
         run: poetry run pylint pyefergy
       - name: 🖤 Format with black
-        run:  black . --check
+        run:  poetry run black . --check
       - name: Check with ruff
         run: poetry run ruff check
       - name: 🔍 Inspect with mypy
