@@ -1,4 +1,5 @@
 """An API library for Efergy energy meters."""
+
 # pylint: disable=too-many-arguments, too-many-public-methods
 from __future__ import annotations
 

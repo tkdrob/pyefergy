@@ -1,4 +1,5 @@
 """Example usage of pyefergy."""
+
 import asyncio
 
 from pyefergy import Efergy

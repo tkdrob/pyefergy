@@ -1,7 +1,7 @@
 # pyefergy
 
 [![codecov](https://codecov.io/gh/tkdrob/pyefergy/branch/master/graph/badge.svg)](https://codecov.io/gh/tkdrob/pyefergy)
-![python version](https://img.shields.io/badge/Python-3.8=><=3.10-blue.svg)
+![python version](https://img.shields.io/badge/Python-3.8=><=3.12-blue.svg)
 [![PyPI](https://img.shields.io/pypi/v/pyefergy)](https://pypi.org/project/pyefergy)
 ![Actions](https://github.com/tkdrob/pyefergy/workflows/Actions/badge.svg?branch=master)
 
@@ -41,9 +41,11 @@ asyncio.get_event_loop().run_until_complete(async_example())
 
 1. Fork the repository
 2. Clone the repository locally and open the devcontainer or use GitHub codespaces
-3. Do your changes
-4. Lint the files with `make lint`
-5. Ensure all tests passes with `make test`
-6. Ensure 100% coverage with `make coverage`
-7. Commit your work, and push it to GitHub
-8. Create a PR against the `master` branch
+3. Install poetry
+4. Install dependencies: `poetry install`
+5. Do your changes
+6. Lint the files with `poetry run pylint pyefergy && black . && poetry run ruff check && poetry run mypy pyefergy`
+7. Ensure all tests pass with `poetry run pytest`
+8. Ensure 100% coverage
+9. Commit your work, and push it to GitHub
+10. Create a PR against the `master` branch
