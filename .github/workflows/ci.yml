@@ -35,24 +35,6 @@ jobs:
         run: poetry run mypy pyefergy
       - name: Test with pytest
         run: poetry run pytest
-  coverage:
-    name: Upload coverage to Codecov
-    needs: ci
-    runs-on: ubuntu-latest
-    steps:
-      - name: 📥 Checkout the repository
-        uses: actions/checkout@v4.1.2
-        with:
-          fetch-depth: 0
-      - name: Install poetry
-        run: pip install poetry==1.8.2
-      - name: 🛠️ Set up Python
-        uses: actions/setup-python@v5.0.0
-        with:
-          python-version: ${{ env.DEFAULT_PYTHON }}
-          cache: "poetry"
-      - name: Install dependencies
-        run: poetry install
       - name: 📤 Upload coverage to Codecov
         uses: codecov/codecov-action@v4.3.1
         with:
