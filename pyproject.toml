@@ -48,6 +48,7 @@ aiohttp = ">=3.6.1"
 iso4217 = ">=1.2.20150619"
 pytz = ">=2024.1"
 types-pytz = ">=2021.3.1"
+codecov = "^2.1.13"
 
 [tool.poetry.group.dev.dependencies]
 aresponses = ">=2.1.4"
