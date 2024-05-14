@@ -35,7 +35,8 @@ jobs:
         run: poetry run mypy pyefergy
       - name: Test with pytest
         run: |
-          poetry shell
+          poetry export --format requirements.txt --output requirements.txt
+          pip install -r requirements.txt
           coverage run -m pytest
       - name: Upload Coverage to Codecov
         if: ${{ failure() != true }}
