@@ -90,7 +90,7 @@ class Efergy:  # pylint:disable=too-many-instance-attributes
 
     def update_params(
         self,
-        api_key: str = None,
+        api_key: str | None = None,
         **kwargs: Any,
     ) -> None:
         """Update API key and UTC offset.
@@ -250,9 +250,9 @@ class Efergy:  # pylint:disable=too-many-instance-attributes
         fromtime: str | int | None = None,
         totime: str | int | None = None,
         aggperiod: str = DEFAULT_PERIOD,
-        type_str: str = None,
+        type_str: str | None = None,
         aggfunc: str = SUM,
-        cachekey: str = None,
+        cachekey: str | None = None,
     ) -> dict[str, str | list[dict[str, str | list[dict[str, Any]]]]]:
         """Return timeseries of aggregated devices on a given channel for an hid."""
         params: dict = {
@@ -323,7 +323,7 @@ class Efergy:  # pylint:disable=too-many-instance-attributes
         self,
         fromtime: str | int,
         totime: str | int,
-        cachekey: str = None,
+        cachekey: str | None = None,
     ) -> dict[str, float]:
         """Deliver proportion of consumed power that is generated in the home.
 
@@ -342,7 +342,7 @@ class Efergy:  # pylint:disable=too-many-instance-attributes
         self,
         fromtime: str | int,
         totime: str | int,
-        cachekey: str = None,
+        cachekey: str | None = None,
     ) -> dict[str, float]:
         """Deliver proportion of generated power.
 
@@ -456,7 +456,7 @@ class Efergy:  # pylint:disable=too-many-instance-attributes
         fromtime: str | int,
         totime: str | int,
         aggperiod: str = DEFAULT_PERIOD,
-        cachekey: str = None,
+        cachekey: str | None = None,
     ) -> dict[str, str | list[dict[str, Any]]]:
         """Return a timeseries of consumed, revenue and c02 saved."""
         params: dict = {
@@ -472,7 +472,7 @@ class Efergy:  # pylint:disable=too-many-instance-attributes
         self,
         fromtime: str | int,
         totime: str | int,
-        cachekey: str = None,
+        cachekey: str | None = None,
         aggperiod: str = DEFAULT_PERIOD,
     ) -> dict[str, str | list[dict[str, Any]]]:
         """Deliver timeseries array of consumed/generated/genconsumed/exported/imported.
@@ -492,7 +492,7 @@ class Efergy:  # pylint:disable=too-many-instance-attributes
         self,
         fromtime: str | int,
         totime: str | int,
-        cachekey: str = None,
+        cachekey: str | None = None,
         aggperiod: str = DEFAULT_PERIOD,
     ) -> dict[str, str | list[dict[str, Any]]]:
         """Deliver timeseries array of consumed/generated/genconsumed/exported/imported.
@@ -590,7 +590,7 @@ class Efergy:  # pylint:disable=too-many-instance-attributes
         return await self._async_req("getTimeSeries", params=params)
 
     async def async_weather(
-        self, city: str, country: str, timestamp: str = None
+        self, city: str, country: str, timestamp: str | None = None
     ) -> list[Any] | dict[str, str]:
         """Get the current weather for the location of the HID."""
         params: dict = {
