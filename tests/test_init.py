@@ -1,7 +1,10 @@
 """Tests for PyEfergy object models."""
 
 # pylint:disable=protected-access, too-many-lines, line-too-long
+from datetime import datetime
+
 from aiohttp.client import ClientSession
+from freezegun.api import FrozenDateTimeFactory
 import pytest
 
 import pyefergy
@@ -18,9 +21,9 @@ async def test_loop() -> None:
 
 
 @pytest.mark.asyncio
-@pytest.mark.freeze_time("2022-01-03 00:00:00+00:00")
-async def test_init(connection: None) -> None:
+async def test_init(connection: None, freezer: FrozenDateTimeFactory) -> None:
     """Test init."""
+    freezer.move_to(datetime(2022, 1, 3))
     client = Efergy(API_KEY, utc_offset="America/New_York", currency="USD")
 
     assert client._utc_offset == 300

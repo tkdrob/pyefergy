@@ -4,14 +4,14 @@
 from __future__ import annotations
 
 from asyncio.exceptions import TimeoutError as timeouterr
-from datetime import datetime
+from datetime import datetime, timedelta
+from zoneinfo import ZoneInfo, ZoneInfoNotFoundError
 import logging
-from typing import Any
+from typing import Any, cast
 
 from aiohttp import ClientSession, ClientTimeout
 from aiohttp.client_exceptions import ClientConnectorError, ServerDisconnectedError
 import iso4217
-from pytz import all_timezones, timezone as tz
 
 from . import exceptions
 
@@ -109,14 +109,15 @@ class Efergy:  # pylint:disable=too-many-instance-attributes
                     break
             if CURRENCY not in self.info:
                 raise exceptions.InvalidCurrency("Provided currency is invalid")
-        if UTC_OFFSET in kwargs:
-            if (utc_offset := kwargs[UTC_OFFSET]) in all_timezones:
-                utc_offset = int(datetime.now(tz(utc_offset)).strftime("%z"))
-                self._utc_offset = -(int(utc_offset / 100 * 60))
-            elif utc_offset.isnumeric():
-                self._utc_offset = utc_offset
-            else:
-                raise exceptions.InvalidOffset("Provided offset is invalid")
+        if (offset := kwargs.get(UTC_OFFSET, "")) and offset.isnumeric():
+            self._utc_offset = offset
+            return
+        try:
+            z_info = ZoneInfo(offset)
+        except ZoneInfoNotFoundError as ex:
+            raise exceptions.InvalidOffset("Provided offset is invalid") from ex
+        utc_offset = cast(timedelta, z_info.utcoffset(datetime.now())).total_seconds()
+        self._utc_offset = -int(utc_offset // 60)
 
     async def _async_req(
         self, command: str, params: dict[str, str | int | float] | None = None

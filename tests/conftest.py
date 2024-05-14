@@ -2,13 +2,14 @@
 
 # pylint:disable=redefined-outer-name
 import asyncio
-
-import pytest
-from aresponses.main import ResponsesMockServer as Server
-from pyefergy import Efergy
+from asyncio import AbstractEventLoop
 import json
 import pathlib
-from asyncio import AbstractEventLoop
+
+from aresponses.main import ResponsesMockServer as Server
+import pytest
+
+from pyefergy import Efergy
 
 API_KEY = "ur1234567-0abc12de3f456gh7ij89k012"
 HOST = "engage.efergy.com"
