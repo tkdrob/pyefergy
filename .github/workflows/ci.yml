@@ -37,18 +37,7 @@ jobs:
         run: poetry run pytest
       - name: Generate Report
         run: |
-          pip install tabulate
-          pip install coverage
-          pip install hypothesis
-          pip install aiohttp
-          pip install iso4217
-          pip install pytz
-          pip install pytest
-          pip install pytest-cov
-          pip install pytest-asyncio
-          pip install pytest-freezer
-          pip install pytest-timeout
-          pip install aresponses
+          pip install coverage aiohttp iso4217 pytz pytest pytest-cov pytest-asyncio pytest-freezer pytest-timeout aresponses
           coverage run -m pytest
       - name: Upload Coverage to Codecov
         uses: codecov/codecov-action@v4.3.1
