@@ -35,7 +35,13 @@ jobs:
         run: poetry run mypy pyefergy
       - name: Test with pytest
         run: poetry run pytest
-      - name: Upload coverage to Codecov
-        run: poetry run codecov
-        env:
-          CODECOV_TOKEN: ${{ secrets.CODECOV_TOKEN }}
+      - name: Generate Report
+        run: |
+          pip install tabulate
+          pip install coverage
+          pip install hypothesis
+          coverage run -m unittest
+      - name: Upload Coverage to Codecov
+        uses: codecov/codecov-action@v1
+        with:
+          verbose: true
