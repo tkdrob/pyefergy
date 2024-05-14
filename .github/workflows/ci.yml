@@ -1,0 +1,47 @@
+name: CI
+on:
+  push:
+    branches:
+      - master
+      - dev
+  pull_request: ~
+env:
+  DEFAULT_PYTHON: "3.12"
+jobs:
+  ci:
+    name: CI
+    runs-on: ubuntu-latest
+    steps:
+      - name: 📥 Checkout the repository
+        uses: actions/checkout@v4.1.2
+        with:
+          fetch-depth: 0
+      - name: Install poetry
+        run: pip install poetry==1.8.2
+      - name: Set up Python ${{ env.DEFAULT_PYTHON }}
+        uses: actions/setup-python@v5.0.0
+        with:
+          python-version: ${{ env.DEFAULT_PYTHON }}
+          cache: "poetry"
+      - name: Install dependencies
+        run: poetry install
+      - name: 🧹 Lint files with pylint
+        run: poetry run pylint pyefergy
+      - name: 🖤 Format with black
+        run:  poetry run black . --check
+      - name: Check with ruff
+        run: poetry run ruff check
+      - name: 🔍 Inspect with mypy
+        run: poetry run mypy pyefergy
+      - name: Test with pytest
+        run: |
+          poetry export --with dev --format requirements.txt --output requirements.txt
+          pip install -r requirements.txt
+          coverage run -m pytest
+      - name: Upload Coverage to Codecov
+        if: ${{ failure() != true }}
+        uses: codecov/codecov-action@v4.3.1
+        with:
+          fail_ci_if_error: true
+          token: ${{ secrets.CODECOV_TOKEN }}
+          verbose: true
