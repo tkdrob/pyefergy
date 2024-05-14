@@ -49,7 +49,7 @@ jobs:
           pip install pytest-freezer
           pip install pytest-timeout
           pip install aresponses
-          coverage run -m unittest
+          coverage run -m pytest
       - name: Upload Coverage to Codecov
         uses: codecov/codecov-action@v1
         with:
