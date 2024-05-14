@@ -34,12 +34,11 @@ jobs:
       - name: 🔍 Inspect with mypy
         run: poetry run mypy pyefergy
       - name: Test with pytest
-        run: poetry run pytest
-      - name: Generate Report
         run: |
-          pip install coverage aiohttp iso4217 pytz pytest pytest-cov pytest-asyncio pytest-freezer pytest-timeout aresponses
+          poetry shell
           coverage run -m pytest
       - name: Upload Coverage to Codecov
+        if: ${{ failure() != true }}
         uses: codecov/codecov-action@v4.3.1
         with:
           fail_ci_if_error: true
