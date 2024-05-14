@@ -43,6 +43,12 @@ jobs:
           pip install aiohttp
           pip install iso4217
           pip install pytz
+          pip install pytest
+          pip install pytest-cov
+          pip install pytest-asyncio
+          pip install pytest-freezer
+          pip install pytest-timeout
+          pip install aresponses
           coverage run -m unittest
       - name: Upload Coverage to Codecov
         uses: codecov/codecov-action@v1
