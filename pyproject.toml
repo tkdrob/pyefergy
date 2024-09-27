@@ -45,7 +45,6 @@ include = ["pyefergy/py.typed"]
 python = ">=3.8,<4"
 aiohttp = ">=3.6.1"
 iso4217 = ">=1.2.20150619"
-types-pytz = ">=2021.3.1"
 codecov = "^2.1.13"
 
 [tool.poetry.group.dev.dependencies]
